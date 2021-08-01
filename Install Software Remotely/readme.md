@@ -2,9 +2,11 @@
 
 This script install software remotely in a group of computers and retry the installation in case of error. It uses PowerShell to perform remote installation.
 
+*Screenshot of TightVNC remote installation on 77 computers.*
+
 ![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/Screenshot.png)
 
-AS it uses Powershell to perform the remote installation, target computer must allow Windows PowerShell Remoting. Script can try to enable Windows PowerShell Remoting using Microsoft Sysinternals Psexec with the paramenter -EnablePSRemoting. If PSExec is not found on computer, script asks to the user for download it and extract to system folder.
+As it uses Powershell to perform the remote installation, target computer must allow Windows PowerShell Remoting. Script can try to enable Windows PowerShell Remoting using Microsoft Sysinternals Psexec with the paramenter -EnablePSRemoting. If PSExec is not found on computer, script asks to the user for download it and extract to system folder.
 
 Please, read parameter description carefully before running.
 
