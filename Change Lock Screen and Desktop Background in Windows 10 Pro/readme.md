@@ -34,7 +34,7 @@ Set Desktop Wallpaper only:
 
  
 
-```
+```powershell
 <# 
 .SYNOPSIS 
     Change Lock Screen and Desktop Background in Windows 10 Pro. 
