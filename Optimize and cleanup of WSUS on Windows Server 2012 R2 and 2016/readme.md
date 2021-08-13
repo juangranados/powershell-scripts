@@ -1,6 +1,17 @@
 # Optimize and cleanup of WSUS on Windows Server
 
-Optimize WSUS DB using [ official Microsoft SQL script](https://web.archive.org/web/20200318183528/https://gallery.technet.microsoft.com/scriptcenter/6f8cde49-5c52-4abd-9820-f1d270ddea61) and performs server maintenance.
+Optimize WSUS DB using [official Microsoft SQL script](https://docs.microsoft.com/en-us/troubleshoot/mem/configmgr/reindex-the-wsus-database) and performs server maintenance.
 
-WsusDBMaintenance.sql included in zip and script must be on the same path.
+WsusDBMaintenance.sql and script must be on the same path.
 
+It saves log in script path: yyyyMMdd__Optimize-WSUS.log
+
+Prerequisites for running Invoke-Sqlcmd
+
+Download: [Microsoft® SQL Server® 2017 Feature Pack](https://www.microsoft.com/en-US/download/details.aspx?id=55992)
+
+Install packages in order:
+
+1. *SQLSysClrTypes.msi*
+2. *SharedManagementObjects.msi*  
+3. Run from PowerShell: `Install-Module -Name SqlServer`
