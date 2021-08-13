@@ -25,7 +25,6 @@
     Set-Screen -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
 .NOTES 
 	Author: Juan Granados 
-	Date:   September 2018
 #>
 Param(
 		[Parameter(Mandatory=$false,Position=0)] 
