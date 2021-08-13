@@ -1,6 +1,6 @@
-# Install software on multiple computers remotely with PowerShell
+# **Change Lock Screen and Desktop Background in Windows 10 Pro**
 
-This script allows you to change logon screen and desktop background in Windows 10 Professional using GPO startup script.
+This script allows you to change login screen and desktop background in Windows 10 Professional using GPO startup script.
 
 By default, lock screen can not be changed by GPO in Windows 10  Professional, with this script you can change it to comply with  corporate image.
 
