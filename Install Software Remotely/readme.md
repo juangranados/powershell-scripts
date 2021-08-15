@@ -1,5 +1,7 @@
 # Install software on multiple computers remotely with PowerShell
 
+<a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/InstallSoftwareRemotely.ps1" download>Right click here and select "Save link as" to download</a>
+
 This script install software remotely in a group of computers and retry the installation in case of error. It uses PowerShell to perform remote installation.
 
 *Screenshot of TightVNC remote installation on 77 computers.*
