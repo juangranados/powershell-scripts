@@ -36,7 +36,6 @@
     .\Get-WSBReport.ps1 -ServerList C:\Scripts\servers_contoso.txt -HtmlReport \\SERVER1\Reports\ -SMTPServer mail.contoso.com -Sender soporte@contoso.com -Recipient jgranados@contoso.com,administrador@contoso.com -Username contoso\jgranados -Password P@ssw0rd
 .NOTES
     Author: Juan Granados
-    Date: December 2017   
 #>
 Param(
         [Parameter(Mandatory=$false,Position=0)] 
