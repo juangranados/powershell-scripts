@@ -1,5 +1,7 @@
 # **Change Lock Screen and Desktop Background in Windows 10 Pro**
 
+<a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Change%20Lock%20Screen%20and%20Desktop%20Background%20in%20Windows%2010%20Pro/Set-Screen.ps1" download>Right click here and select "Save link as" to download</a>
+
 This script allows you to change login screen and desktop background in Windows 10 Professional using GPO startup script.
 
 By default, lock screen can not be changed by GPO in Windows 10  Professional, with this script you can change it to comply with  corporate image.
