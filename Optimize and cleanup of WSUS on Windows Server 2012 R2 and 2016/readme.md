@@ -4,6 +4,10 @@ Optimize WSUS DB using [official Microsoft SQL script](https://docs.microsoft.co
 
 WsusDBMaintenance.sql and script must be on the same path.
 
+- <a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20and%20cleanup%20of%20WSUS%20on%20Windows%20Server%202012%20R2%20and%202016/Optimize-WSUS.ps1" download>Right click here and select "Save link as" to download script</a>
+
+- <a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20and%20cleanup%20of%20WSUS%20on%20Windows%20Server%202012%20R2%20and%202016/WsusDBMaintenance.sql" download>Right click here and select "Save link as" to download WsusDBMaintenance.sql</a>
+
 It saves log in script path: yyyyMMdd__Optimize-WSUS.log
 
 Prerequisites for running Invoke-Sqlcmd
