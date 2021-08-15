@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-	Generate a folders permissions report.
+    Generate a folders permissions report.
 .DESCRIPTION
-	Starting with a root folder, it generates a folders permissions report. Number of subfolders examined depends on FolderDeep parameter.
+    Starting with a root folder, it generates a folders permissions report. Number of subfolders examined depends on FolderDeep parameter.
     Report is generated in CSV format and can be send attached via mail with a html report in the body. 
 .PARAMETER OutFile
-	Path to store CSV file.
+    Path to store CSV file.
     Default .\Permissions.csv
 .PARAMETER RootPath
-	Folder to start checking permissions.
+    Folder to start checking permissions.
 .PARAMETER FolderDeep
     Number of subfolders levels to check.
     Default 99.
@@ -37,34 +37,25 @@
 .EXAMPLE
     Get-FoldersPermissions -RootPath "D:\Data\Departments" -FolderDeep 2 -SMTPServer "mail.server.com" -SMTPRecipient "megaboss@server.com","support@server.com" -SMTPSender "reports@server.com"
 .NOTES 
-	Author: Juan Granados 
-	Date:   January 2018
+    Author: Juan Granados 
 #>
 [cmdletbinding()]
 
-    param(
-        [parameter(Position=0,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Path to store CSV file')][string]$OutFile = ".\$(Get-Date -format "yyyyMMdd_hhmmss")-Permissions.csv",
-        [parameter(Position=1,Mandatory=$true,ValueFromPipeline=$false,HelpMessage='Folder to start checking permissions')][string]$RootPath,
-        [parameter(Position=2,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Number of subfolders levels to check')][string]$FolderDeep = 99,
-        [parameter(Position=3,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Users or groups to ignore in report')][string[]]$ObjectsIgnored = @("NT AUTHORITY\SYSTEM","BUILTIN\Administrator"),
-        [parameter(Position=4,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Inspect users in groups ($True/$False)')][bool]$InspectGroups=$false,
-	    [parameter(Position=5,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail From')][string]$SMTPSender,
-	    [parameter(Position=6,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail To')]$SMTPRecipient,
-	    [parameter(Position=7,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Server')][string]$SMTPServer,
-        [parameter(Position=8,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail User')][string]$SMTPUser,
-        [parameter(Position=9,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Password')][string]$SMTPPassword,
-        [parameter(Position=10,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Port')][string]$SMTPPort=25,
-        [parameter(Position=11,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Use SSL in mail sending ($True/$False)')][bool]$SMTPSSL=$False,
-        [parameter(Position=12,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Subject')][string]$SMTPSubject="Permission report on server $($env:computername) on directory $($RootPath) with $($FolderDeep) level deep"
-        )
-<#
-.SYNOPSIS
-	Generate a folders permissions html rows for building an html table and store this report in csv file.
-.PARAMETER $Folder
-	Folder to check permissions.
-.PARAMETER Deep
-	Number of subfolders to examine
-#>
+param(
+    [parameter(Position=0,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Path to store CSV file')][string]$OutFile = ".\$(Get-Date -format "yyyyMMdd_hhmmss")-Permissions.csv",
+    [parameter(Position=1,Mandatory=$true,ValueFromPipeline=$false,HelpMessage='Folder to start checking permissions')][string]$RootPath,
+    [parameter(Position=2,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Number of subfolders levels to check')][string]$FolderDeep = 99,
+    [parameter(Position=3,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Users or groups to ignore in report')][string[]]$ObjectsIgnored = @("NT AUTHORITY\SYSTEM","BUILTIN\Administrator"),
+    [parameter(Position=4,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Inspect users in groups ($True/$False)')][bool]$InspectGroups=$false,
+    [parameter(Position=5,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail From')][string]$SMTPSender,
+    [parameter(Position=6,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail To')]$SMTPRecipient,
+    [parameter(Position=7,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Server')][string]$SMTPServer,
+    [parameter(Position=8,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail User')][string]$SMTPUser,
+    [parameter(Position=9,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Password')][string]$SMTPPassword,
+    [parameter(Position=10,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Port')][string]$SMTPPort=25,
+    [parameter(Position=11,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Use SSL in mail sending ($True/$False)')][bool]$SMTPSSL=$False,
+    [parameter(Position=12,Mandatory=$false,ValueFromPipeline=$false,HelpMessage='Mail Subject')][string]$SMTPSubject="Permission report on server $($env:computername) on directory $($RootPath) with $($FolderDeep) level deep"
+)
 Function Get-FolderPermissions($Folder,[int]$Deep = 0){
     # Write current folder name 
     Write-Host "Examining folder $($Folder.FullName)"
