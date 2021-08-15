@@ -1,5 +1,7 @@
 # File Server Access Audit Report with PowerShell
 
+<a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/File%20Server%20Access%20Audit%20Report%20with%20PowerShell/FileServerAuditReport.ps1" download>Right click here and select "Save link as" to download</a>
+
 This PowerShell script allows to audit several file servers and send a report in CSV and HTML by mail.
 
 CSV file can be import on Excel to generate a File Audit Report.
