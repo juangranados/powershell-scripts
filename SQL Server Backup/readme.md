@@ -13,16 +13,21 @@ This script must be executed in the SQL Server you want to backup.
 #### *Examples*
 
 Backup default instance databases to a network share
+
 `BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL`
 
 Backup default instance databases to a network share and send an email with result using gmail
+
 `BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL -SMTPServer smtp.gmail.com -Recipient jgranados@contoso.com,administrator@contoso.com -Sender backupSQL@gmail.com -Username backupSQL@gmail.com -Password Pa$$W0rd -SSL True -Port 587`
 
 Backup named instance databases to a network share
+
 `BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL -Instance SQLSVR01\BKUPEXEC`
 
 Backup default instance databases to a network share, delete from network share files older than a week and write result in Windows Application Event
+
 `BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL -RetainDays 7 -WriteEvent True`
 
 Backup only specified databases of a named instance
+
 `BackupSQL.ps1 -Instance SQLSVR01\BKUPEXEC -DataBases BEDB,msdb,model`
