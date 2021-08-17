@@ -1,14 +1,10 @@
 <#
 .SYNOPSIS
     Full and Log Backup of SQL Server instance databases with SMO 
-    Tested on SQL Server 2008, 2008 R2 and 2012
 .DESCRIPTION
     This script perform a instance databases backup of a SQL Server in to a zip file.
     Usage: SQLBackup.ps1 [-BackupDirectory <string>] [-DataBases <string[]>] [-Instance <string>] [-SimpleBackup <True | False>] [-RetainDays <int>] [TempDirectory <string>] [SMTPServer <string>] [Recipient <string[]>] [Sender <string>] [Username <string>] [Password <string>] [-SSL <True | False>] [Port <int>] [WriteEvent <True | False>] 
-
-    Requires Powershell comunity extensions: https://pscx.codeplex.com/
-    Install it and copy Pscx forder from C:\Program Files (x86)\PowerShell Community Extensions\Pscx3) 
-    in C:\Windows\System32\WindowsPowerShell\v1.0\Modules
+    Requires Powershell comunity extensions: Install-Module -Name Pscx
 .PARAMETER BackupDirectory
     Directory where zip file will be saved. UNC paths are supported. 
     Default "...\My Documents\SQLBackup\"
@@ -69,8 +65,7 @@
     C:\PS>.\BackupSQL.ps1 -Instance SQLSVR01\BKUPEXEC -DataBases BEDB,msdb,model
 
 .NOTES
-    Author: Juan Granados
-    Date:   June 2015    
+    Author: Juan Granados 
 #>
     Param(
         [Parameter(Mandatory=$false,Position=0)] 
@@ -153,10 +148,10 @@ Function Get-MyModule
     else { $true } #module already loaded
 } #end function get-MyModule 
 
-# Write-zip needs module https://pscx.codeplex.com/ install and copy Pscx from C:\Program Files (x86)\PowerShell Community Extensions\Pscx3) 
-# to C:\Windows\System32\WindowsPowerShell\v1.0\Modules
-If(! (Get-MyModule –name “Pscx”)) 
-    {“Pscx module is not installed on this system. Please download and install it from https://pscx.codeplex.com/ and copy Pscx from C:\Program Files (x86)\PowerShell Community Extensions\Pscx3) to C:\Windows\System32\WindowsPowerShell\v1.0\Modules”;exit}
+# Write-zip needs module PSCX: Install-Module -Name Pscx
+If(! (Get-MyModule –name "Pscx")) {
+    Write-Host "Pscx module is not installed on this system. Please run: Install-Module -Name Pscx and run script again."
+}
 
 # Variable to measure script execution time
 $startDTM = (Get-Date)
@@ -183,7 +178,7 @@ if(!(Test-Path -Path $BackupDirectory))
      Write-Output "$BackupDirectory does not exists and can not be created. Script can not continue"
      if ($WriteEvent -eq "True")
      {
-        Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Error –EventID 2 –Message "SQL Backup Failed. $BackupDirectory does not exists and can not be created."
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed. $BackupDirectory does not exists and can not be created."
      }
      Exit 
     }      
@@ -197,7 +192,7 @@ if(!(Test-Path -Path $TempDirectory))
      Write-Output "$TempDirectory does not exists and can not be created. Script can not continue"
      if ($WriteEvent -eq "True")
      {
-         Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Error –EventID 2 –Message "SQL Backup Failed.$TempDirectory does not exists and can not be created."
+         Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed.$TempDirectory does not exists and can not be created."
      }
      Exit 
     }
@@ -291,7 +286,7 @@ try
     # Show information about the size of file copied on Windows registry
     if ($WriteEvent -eq "True")
     {
-        Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Information –EventID 1 –Message "Backup $ZipFileRemote stored. $DataSum MB copied"
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 1 –Message "Backup $ZipFileRemote stored. $DataSum MB copied"
     }
 
     # Sending email with backup result
@@ -305,13 +300,13 @@ try
         try{
             Write-Output "Sending email"
             $smtp.Send($msg)
-            Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Information –EventID 4 –Message "Success backup result sent to $Recipient"
+            Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 4 –Message "Success backup result sent to $Recipient"
            }catch
                 {
                     # Write error on application event log
                     if ($WriteEvent -eq "True")
                     {
-                        Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+                        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
                     }
                     write-host "Caught an exception:" -ForegroundColor Red
                     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
@@ -341,7 +336,7 @@ catch
         # Write error on application event log
         if ($WriteEvent -eq "True")
         {
-            Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Error –EventID 2 –Message "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+            Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
         }
         # Sending email with backup result
         if ($SMTPServer -ne "None")
@@ -354,13 +349,13 @@ catch
             Write-Output "Sending email"
             try{
             $smtp.Send($msg)
-            Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Information –EventID 4 –Message "Error backup result sent to $Recipient"
+            Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 4 –Message "Error backup result sent to $Recipient"
             }catch
                 {
                     # Write error on application event log
                     if ($WriteEvent -eq "True")
                     {
-                        Write-EventLog –LogName Application –Source “BackupSQL” –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+                        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
                     }
                     write-host "Caught an exception:" -ForegroundColor Red
                     write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
