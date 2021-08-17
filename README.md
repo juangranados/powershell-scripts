@@ -1,5 +1,7 @@
 # Script index
 
+Click in any link to read full description 
+
 - [Install software on multiple computers remotely with PowerShell](https://github.com/juangranados/powershell-scripts/tree/main/Install%20Software%20Remotely): install software remotely in a group of computers and retry the installation in case of error. It uses PowerShell to perform remote installation, WMI and reg query to filter target computers.
 - [Windows Server Backup Report of several servers](https://github.com/juangranados/powershell-scripts/tree/main/Windows%20Server%20Backup%20Email%20Report%20of%20Several%20Servers): performs a Windows Server Backup HTML report of a servers list and send it via email.
 - [Change Lock Screen and Desktop Background in Windows 10 Pro](https://github.com/juangranados/powershell-scripts/tree/main/Change%20Lock%20Screen%20and%20Desktop%20Background%20in%20Windows%2010%20Pro): change logon screen and desktop background in Windows 10 Professional using GPO startup script.
