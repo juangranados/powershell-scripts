@@ -13,25 +13,25 @@ Examples:
 Set Lock Screen and Desktop Wallpaper with logs:
 
 ```powershell
-.\Set-Screen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
+.\Set-LockScreen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
 ```
 
 Set Lock Screen and Desktop Wallpaper without logs:
 
 ```powershell
-.\Set-Screen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg"
+.\Set-LockScreen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg"
 ```
 
 Set Lock Screen only:
 
 ```powershell
-.\Set-Screen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
+.\Set-LockScreen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
 ```
 
 Set Desktop Wallpaper only:
 
 ```powershell
-.\Set-Screen.ps1 -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
+.\Set-LockScreen.ps1 -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs"
 ```
 
  
@@ -52,16 +52,16 @@ Set Desktop Wallpaper only:
     Path where save log file. If it's not specified no log is recorded. 
 .EXAMPLE 
     Set Lock Screen and Desktop Wallpaper with logs: 
-    Set-Screen -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs" 
+    Set-Loca Screen -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs" 
 .EXAMPLE 
     Set Lock Screen and Desktop Wallpaper without logs: 
-    Set-Screen -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" 
+    Set-LockScreen -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" 
 .EXAMPLE 
     Set Lock Screen only: 
     .\Set-Screen.ps1 -LockScreenSource "\\SERVER-FS01\LockScreen.jpg" -LogPath "\\SERVER-FS01\Logs" 
 .EXAMPLE 
     Set Desktop Wallpaper only: 
-    .\Set-Screen.ps1 -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs" 
+    .\Set-LockScreen.ps1 -BackgroundSource "\\SERVER-FS01\BackgroundScreen.jpg" -LogPath "\\SERVER-FS01\Logs" 
 .NOTES  
     Author: Juan Granados  
 #>
