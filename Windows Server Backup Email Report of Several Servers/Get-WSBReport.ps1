@@ -1,10 +1,39 @@
-﻿<#
+﻿<#PSScriptInfo
+
+.VERSION 1.1
+
+.GUID dcdf38ce-c0b8-4fc3-a42e-519ae3191c10
+
+.AUTHOR Juan Granados
+
+.COMPANYNAME 
+
+.COPYRIGHT 2021 Juan Granados
+
+.TAGS Backup Report Windows Server Email
+
+.LICENSEURI https://raw.githubusercontent.com/juangranados/powershell-scripts/main/LICENSE
+
+.PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/Windows%20Server%20Backup%20Email%20Report%20of%20Several%20Servers
+
+.ICONURI 
+
+.EXTERNALMODULEDEPENDENCIES 
+
+.REQUIREDSCRIPTS 
+
+.EXTERNALSCRIPTDEPENDENCIES 
+
+.RELEASENOTES
+    Collect information about Windows Server Backup on a list of servers and show results on console. It has the posibility of generate an send an html report with backup results.
+#>
+
+<#
 .SYNOPSIS
     This script collect information about Windows Server Backup on a list of servers.
     Requires Windows Server Backup Command Line Tools installed on remote servers (Add-WindowsFeature Backup-Tools)
 .DESCRIPTION
     This script collect information about Windows Server Backup on a list of servers and show results on console. It has the posibility of generate an send an html report with backup results.
-    Usage: Get-WSBReport.ps1 [-Servers <string>] [-HtmlReport <string>] [SMTPServer <string>] [Recipient <string[]>] [Sender <string>] [Username <string>] [Password <string>] [-SSL <True | False>] [Port <int>]
 .PARAMETER Servers
    Full path of a file containing the list of servers to check Windows Server Backup Status   
    Default "C:\Scripts\Servers.txt"
@@ -35,7 +64,7 @@
 .EXAMPLE
     .\Get-WSBReport.ps1 -ServerList C:\Scripts\servers_contoso.txt -HtmlReport \\SERVER1\Reports\ -SMTPServer mail.contoso.com -Sender soporte@contoso.com -Recipient jgranados@contoso.com,administrador@contoso.com -Username contoso\jgranados -Password P@ssw0rd
 .NOTES
-    Author: Juan Granados
+    Author: Juan Granados 
 #>
 Param(
         [Parameter(Mandatory=$false,Position=0)] 
@@ -110,7 +139,6 @@ for ($i=0; $i -lt $servers.length; $i++)
              $results[$i].add("<td>" + "Unknown" + "</td>") > $null
              $results[$i].add("<td>" + "Error connecting remote server" + "</td>") > $null
              $results[$i].add("<td>" + "Unknown" + "</td>") > $null
-             $results[$i].add("<td>" + "Unknown" + "</td>") > $null
             }
         else
             {
@@ -123,10 +151,8 @@ for ($i=0; $i -lt $servers.length; $i++)
              else{$results[$i].add("<td>" + $WBSummary.DetailedMessage + "</td>") > $null;$message= $WBSummary.DetailedMessage}
 
              $results[$i].add("<td>" + $WBSummary.NumberOfVersions + "</td>") > $null
-
-             if ([string]::IsNullOrEmpty($WBSummary.LastBackupTarget)){$results[$i].add("<td>None</td>") > $null}
-             else{$results[$i].add("<td>" + $WBSummary.LastBackupTarget + "</td>") > $null}
-               
+        
+        
              Write-Host "Last Backup Result: $result"
              Write-Host "Last Successful Backup Time:" $WBSummary.LastSuccessfulBackupTime
              Write-Host "Detailed Message: $message"
@@ -162,7 +188,6 @@ $HTMLFile = @"
         <th>Last Backup Result Time</th>
         <th>Message</th>
         <th>Number of backups</th>
-        <th>Last Backup Target</th>
     </tr>
         $rows
 </table>
@@ -171,7 +196,7 @@ $HTMLFile = @"
 "@
 if ([boolean](get-variable "ReportPath" -ErrorAction SilentlyContinue))
     {Clear-Variable -Name "ReportPath" -Scope Global}
-$ReportPath = $HtmlReport + "$timestamp" + "_WSBReport.html"
+$ReportPath = $ReportPath + "$timestamp" + "_WSBReport.html"
 try{
 ConvertTo-HTML -Body $HTMLFile -title "Windows Server Backup Report" | Out-File $ReportPath
     }catch
