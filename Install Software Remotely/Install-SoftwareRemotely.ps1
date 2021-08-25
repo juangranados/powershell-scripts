@@ -1,6 +1,6 @@
 ﻿<#PSScriptInfo
 
-.VERSION 1.0
+.VERSION 1.0.1
 
 .GUID 9d73a2b5-1329-42c0-b0ec-328198e3392d
 
@@ -15,7 +15,7 @@
 .PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/Install%20Software%20Remotely
 
 .RELEASENOTES
-    Install software remotely in a group of computers and retry the installation in case of error.
+    Update examples
 #>
 
 <#
@@ -87,15 +87,15 @@
     Example: 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="32"' (32 bit computers)
     Default: None
 .EXAMPLE
-    TightVNC -> .\InstallSoftwareRemotely.ps1 -AppPath 'C:\Scripts\TightVNC\tightvnc-2.8.8-gpl-setup-64bit.msi' -AppArgs '/quiet /norestart ADDLOCAL="Server" SERVER_REGISTER_AS_SERVICE=1 SERVER_ADD_FIREWALL_EXCEPTION=1 SERVER_ALLOW_SAS=1 SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=Password.01 SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=3digits.01' -OU 'OU=Central,OU=Computers,DC=Contoso,DC=local' -Retries 2 -AppName 'TightVNC' -AppVersion '2.8.8.0' -EnablePSRemoting -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="64"'
+    TightVNC -> Install-SoftwareRemotely.ps1 -AppPath 'C:\Scripts\TightVNC\tightvnc-2.8.8-gpl-setup-64bit.msi' -AppArgs '/quiet /norestart ADDLOCAL="Server" SERVER_REGISTER_AS_SERVICE=1 SERVER_ADD_FIREWALL_EXCEPTION=1 SERVER_ALLOW_SAS=1 SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=Password.01 SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=3digits.01' -OU 'OU=Central,OU=Computers,DC=Contoso,DC=local' -Retries 2 -AppName 'TightVNC' -AppVersion '2.8.8.0' -EnablePSRemoting -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="64"'
 .EXAMPLE
-    TightVNC Mirage Driver -> .\InstallSoftwareRemotely.ps1 -AppPath 'C:\Scripts\TightVNC\dfmirage-setup-2.0.301.exe' -AppArgs '/verysilent /norestart' -OU 'OU=Central,OU=Computers,OU=MyBusiness,DC=Contoso,DC=local' -Retries 2 -AppName 'DemoForge Mirage Driver for TightVNC 2.0' -AppVersion '2.0' -EnablePSRemoting -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="64"'
+    TightVNC Mirage Driver -> Install-SoftwareRemotely.ps1 -AppPath 'C:\Scripts\TightVNC\dfmirage-setup-2.0.301.exe' -AppArgs '/verysilent /norestart' -OU 'OU=Central,OU=Computers,OU=MyBusiness,DC=Contoso,DC=local' -Retries 2 -AppName 'DemoForge Mirage Driver for TightVNC 2.0' -AppVersion '2.0' -EnablePSRemoting -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="64"'
 .EXAMPLE
-	InstallSoftwareRemotely.ps1 -AppPath "C:\Temp\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -ComputerList Computer001,Computer002,Computer003 -AppName "Miranda IM 0.10.75" -AppVersion "0.10.75"
+	Install-SoftwareRemotely.ps1 -AppPath "C:\Temp\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -ComputerList Computer001,Computer002,Computer003 -AppName "Miranda IM 0.10.75" -AppVersion "0.10.75"
 .EXAMPLE
-	InstallSoftwareRemotely.ps1 -AppPath "C:\Temp\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -CSV "C:\Computers.csv" -Credential -EnablePSRemoting
+	Install-SoftwareRemotely.ps1 -AppPath "C:\Temp\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -CSV "C:\Computers.csv" -Credential -EnablePSRemoting
 .EXAMPLE
-	InstallSoftwareRemotely.ps1 -AppPath "\\Server01\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -OU "OU=Test,OU=Computers,DC=CONTOSO,DC=COM"
+	Install-SoftwareRemotely.ps1 -AppPath "\\Server01\Software\Miranda\miranda-im-v0.10.75-unicode.exe" -AppArgs "/S" -OU "OU=Test,OU=Computers,DC=CONTOSO,DC=COM"
 .NOTES 
 	Author: Juan Granados 
 	Date:   July 2021
