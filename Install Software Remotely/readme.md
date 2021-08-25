@@ -1,6 +1,6 @@
 # Install software on multiple computers remotely with PowerShell
 
-<a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/InstallSoftwareRemotely.ps1" download>Right click here and select "Save link as" to download</a>
+<a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/Install-SoftwareRemotely.ps1" download>Right click here and select "Save link as" to download</a>
 
 This script install software remotely in a group of computers and retry the installation in case of error. It uses PowerShell to perform remote installation.
 
@@ -104,7 +104,7 @@ Other examples:
 
 ```powershell
 #Install TightVNC mirage Driver using computer list with different credentials checking before if it is installed and computers have 32 bits, enabling PSRemoting on connection error. 
-.\InstallSoftwareRemotely.ps1 ` 
+Install-SoftwareRemotely.ps1 ` 
 -AppPath 'C:\Scripts\TightVNC\dfmirage-setup-2.0.301.exe' ` 
 -AppArgs '/verysilent /norestart' ` 
 -ComputerList PC01,PC03,PC12,PC34,PC43,PC50 ` 
@@ -116,7 +116,7 @@ Other examples:
 -Credential 
  
 #Install TightVNC on 64 bits computers in a OU checking before if it is installed and enablig PSRemoting on connection error. 
-.\InstallSoftwareRemotely.ps1 ` 
+Install-SoftwareRemotely.ps1 ` 
 -AppPath 'C:\Scripts\TightVNC\tightvnc-2.8.8-gpl-setup-64bit.msi' ` 
 -AppArgs '/quiet /norestart ADDLOCAL="Server" SERVER_REGISTER_AS_SERVICE=1 SERVER_ADD_FIREWALL_EXCEPTION=1 SERVER_ALLOW_SAS=1 SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=P@ssw0rd SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=P@ssw0rd' ` 
 -OU 'OU=Central,OU=Computers,DC=Contoso,DC=local' ` 
@@ -127,5 +127,5 @@ Other examples:
 -EnablePSRemoting 
  
 #Upgrade VMware Tools in datacenter OU 
-.\InstallSoftwareRemotely.ps1 -AppPath "\\mv-srv-fs01\Software\VMware Tools\setup64.exe" -AppArgs '/s /v "/qn reboot=r"' -OU "OU=Datacenter,DC=CONTOSO,DC=COM" 
+Install-SoftwareRemotely.ps1 -AppPath "\\mv-srv-fs01\Software\VMware Tools\setup64.exe" -AppArgs '/s /v "/qn reboot=r"' -OU "OU=Datacenter,DC=CONTOSO,DC=COM" 
 ```
