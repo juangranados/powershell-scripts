@@ -12,10 +12,8 @@ It saves log in script path: yyyyMMdd__Optimize-WSUS.log
 
 Prerequisites for running Invoke-Sqlcmd
 
-Download: [Microsoft® SQL Server® 2017 Feature Pack](https://www.microsoft.com/en-US/download/details.aspx?id=55992)
-
-Install packages in order:
-
-1. *SQLSysClrTypes.msi*
-2. *SharedManagementObjects.msi*  
+1. Download and install SQLSysClrTypes.msi from: [Microsoft® SQL Server® 2017 Feature Pack](https://www.microsoft.com/en-US/download/details.aspx?id=55992)
+2. Run from PowerShell: 
+  - `Register-PackageSource -provider NuGet -name nugetRepository -location https://www.nuget.org/api/v2`
+  - `Install-Package Microsoft.SqlServer.SqlManagementObjects` in case of error of circular dependency add `-SkipDependencies`
 3. Run from PowerShell: `Install-Module -Name SqlServer`
