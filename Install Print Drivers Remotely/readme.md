@@ -12,7 +12,9 @@ In [KB5005652](https://support.microsoft.com/topic/873642bf-2634-49c5-a23b-6d8e9
 
 This script allows remote printer drivers installation on a group of computers using printerExport file and [PSExec](https://docs.microsoft.com/en-us/sysinternals/downloads/pstools). If PSExec is not found on computer, script asks to the user for download it and extract in system folder.
 
-To generate a printer export file with all printer drivers, run `PrintbrmUI.exe` from the computer or server you want to export them. I recommend install all printer drivers on a test computer and run `PrintbrmUI.exe` to export the printerExport file that will be used to install all drivers in computers and servers.
+To generate a printer export file with all printer drivers, run `PrintbrmUI.exe` from the computer or server you want to export them. 
+
+Be carefully because this tool exports all printers and ports too. I recommend install all drivers in a test computer without printers and export them using `PrintbrmUI.exe`. Alternatively, you can export all from print server, import in a test computer, delete printers and ports and export again to obtain a printerExport file with only drivers.
 
 ![PrintbrmUI screenshot](https://github.com/juangranados/powershell-scripts/blob/main/Install%20Print%20Drivers%20Remotely/2.PNG?raw=true)
 
