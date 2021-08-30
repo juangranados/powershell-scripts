@@ -1,6 +1,6 @@
 # PrintNightmare - Install printer drivers on remote computers using printerExport file
 
-[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Bulk%20Change%20PrinterDriverAttributes%20for%20non%20Package-Aware%20printer%20drivers/ChangePrinterDriverAttributes.ps1)
+[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Install-PrinterExportRemoteComputers.ps1)
 
 On August 10, Microsoft posted a [blog post](https://msrc-blog.microsoft.com/2021/08/10/point-and-print-default-behavior-change/) about changes to the point and print.
 
@@ -8,9 +8,13 @@ After the August patches, standard users cant add any printers. This  means that
 
 In [KB5005652](https://support.microsoft.com/topic/873642bf-2634-49c5-a23b-6d8e9a302872) documentation, Microsoft recommends this four solutions to install print drivers:
 
+![Solutions to KB5005652](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/1.PNG)
+
 This script allows remote printer drivers installation on a group of computers using printerExport file.
 
 To generate a printer export file with all printer drivers, run `PrintbrmUI.exe` from the computer or server you want to export them.
+
+![PrintbrmUI screenshot](https://github.com/juangranados/powershell-scripts/blob/main/Install%20Print%20Drivers%20Remotely/2.PNG?raw=true)
 
 ## Parameters
 
