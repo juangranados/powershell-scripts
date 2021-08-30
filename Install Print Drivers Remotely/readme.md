@@ -27,8 +27,20 @@ To generate a printer export file with all printer drivers, run `PrintbrmUI.exe`
 *Example: Computer001,Computer002,Computer003 (Without quotation marks)*
 
 **OU**: OU containing computers in which install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
-SAT for AD module for PowerShell must be installed in order to query AD.
+RSAT for AD module for PowerShell must be installed in order to query AD.
 If you run script from a Domain Controller, AD module for PowerShell is already enabled.
+
+To install it from Windows 10 computer
+
+```powershell
+Get-WindowsCapability -Online |? {$_.Name -like "*RSAT.ActiveDirectory*" -and $_.State -eq "NotPresent"} | Add-WindowsCapability -Online
+```
+
+To install it from server
+
+```powershell
+Install-WindowsFeature RSAT-ADDS
+```
 
 *Example: : 'OU=RDSH,OU=Servers,DC=CONTOSO,DC=COM'*
 
