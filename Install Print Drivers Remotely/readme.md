@@ -1,6 +1,6 @@
 # PrintNightmare - Install printer drivers on remote computers using printerExport file
 
-[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Install-PrinterExportRemotely.ps1)
+[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Install-PrinterDriversRemotely.ps1)
 
 On August 10, Microsoft posted a [blog post](https://msrc-blog.microsoft.com/2021/08/10/point-and-print-default-behavior-change/) about changes to the point and print.
 
@@ -39,7 +39,7 @@ Get-WindowsCapability -Online |? {$_.Name -like "*RSAT.ActiveDirectory*" -and $_
 To install it from server
 
 ```powershell
-Install-WindowsFeature RSAT-ADDS
+Install-WindowsFeature RSAT-AD-PowerShell
 ```
 
 *Example: : 'OU=RDSH,OU=Servers,DC=CONTOSO,DC=COM'*
