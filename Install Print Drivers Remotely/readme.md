@@ -42,11 +42,11 @@ To install it from server
 Install-WindowsFeature RSAT-AD-PowerShell
 ```
 
-*Example: : 'OU=RDSH,OU=Servers,DC=CONTOSO,DC=COM'*
+*Example: : "OU=RDSH,OU=Servers,DC=CONTOSO,DC=COM"*
 
 **CSV**: CSV file containing computers in which install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
 
-*Example: 'C:\Scripts\Computers.csv'*
+*Example: "C:\Scripts\Computers.csv"*
 CSV Format:
 
 ```CSV
