@@ -1,3 +1,23 @@
+<#PSScriptInfo
+
+.VERSION 1.0
+
+.GUID 1069276e-50b4-414a-ae8c-b8801445ae7e
+
+.AUTHOR Juan Granados
+
+.COPYRIGHT 2021 Juan Granados
+
+.TAGS Folder Permission Report HTML CSV email mail
+
+.LICENSEURI https://raw.githubusercontent.com/juangranados/powershell-scripts/main/LICENSE
+
+.PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/Email%20Report%20of%20File%20Permissions%20on%20HTML%20and%20CSV
+
+.RELEASENOTES
+    Initial release
+#>
+
 <#
 .SYNOPSIS
     Generate a folders permissions report.
@@ -36,6 +56,8 @@
     Default: 25
 .EXAMPLE
     Get-FoldersPermissions -RootPath "D:\Data\Departments" -FolderDeep 2 -SMTPServer "mail.server.com" -SMTPRecipient "megaboss@server.com","support@server.com" -SMTPSender "reports@server.com"
+.LINK
+    https://github.com/juangranados/powershell-scripts/tree/main/Email%20Report%20of%20File%20Permissions%20on%20HTML%20and%20CSV
 .NOTES 
     Author: Juan Granados 
 #>
