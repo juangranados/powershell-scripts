@@ -12,7 +12,7 @@
 
 .LICENSEURI https://raw.githubusercontent.com/juangranados/powershell-scripts/main/LICENSE
 
-.PROJECTURI https://github.com/juangranados/powershell-scripts/blob/main/Install Print Drivers Remotely
+.PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/Install%20Print%20Drivers%20Remotely
 
 .RELEASENOTES
     Initial release
@@ -24,16 +24,24 @@
 .DESCRIPTION
 	Install printer drivers export file (*.printerExport) in a list of computers (plain computer list, OU or CSV file) using PSExec.
     To generate a printer export file with all print drivers, run PrintbrmUI.exe from the computer or server you want to export them.
+    Be carefully because this tool exports all printers and ports too. I recommend install all drivers in a test computer without printers and export them using PrintbrmUI.exe.
+    Alternatively, you can export all from print server, import in a test computer, delete printers and ports and export again to obtain a printerExport file with only drivers.
     If PSExec is not found on computer, script asks to the user for download it and extract in system folder.
+    I recommend use PSExec latest version because v2.2 does not launch printbrm.exe properly.
 .PARAMETER printerExportFile
 	Path to the printerExport file
     To generate a printer export file with all print drivers, run PrintbrmUI.exe from the computer or server you want to export them.
+    Be carefully because this tool exports all printers and ports too. I recommend install all drivers in a test computer without printers and export them using PrintbrmUI.exe.
+    Alternatively, you can export all from print server, import in a test computer, delete printers and ports and export again to obtain a printerExport file with only drivers.
 .PARAMETER ComputerList
     List of computers in install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
-    Example: Computer001,Computer002,Computer003 (Without quotation marks)
+    Example: SRV-RDSH-001,SRV-RDSH-002,SRV-RDSH-003 (Without quotation marks)
 .PARAMETER OU
     OU containing computers in which install printer drivers.
     RSAT for AD module for PowerShell must be installed in order to query AD.
+     - Install on Windows 10: Get-WindowsCapability -Online |? {$_.Name -like "*RSAT.ActiveDirectory*" -and $_.State -eq "NotPresent"} | Add-WindowsCapability -Online
+     - Install on server: Install-WindowsFeature RSAT-AD-PowerShell
+    Restart console after installation.
     If you run script from a Domain Controller, AD module for PowerShell is already enabled.
     You can only use one source of target computers: ComputerList, OU or CSV.
     Example: 'OU=Test,OU=Computers,DC=CONTOSO,DC=COM'
@@ -48,6 +56,7 @@
 .PARAMETER LogPath
     Path where save log file.
     Default: My Documents
+    Example: C:\Logs
 .PARAMETER Credential
     Script will ask for an account to perform remote installation.
 .EXAMPLE
@@ -56,6 +65,8 @@
     Install-PrinterExportRemoteComputers.ps1 -printerExportFile "\\MV-SRV-PR01\Drivers\print_drivers.printerExport" -ComputerList SRVRSH-001,SRVRSH-002,SRVRSH-003 -Credential -LogPath C:\Temp\Logs
 .EXAMPLE
     Install-PrinterExportRemoteComputers.ps1 -printerExportFile "\\MV-SRV-PR01\Drivers\print_drivers.printerExport" -CSV "C:\scripts\computers.csv"
+.LINK
+    https://github.com/juangranados/powershell-scripts/tree/main/Install%20Print%20Drivers%20Remotely
 .NOTES 
 	Author: Juan Granados
 #>
@@ -126,6 +137,7 @@ if (!(Get-Command "psexec.exe" -ErrorAction SilentlyContinue)){
         If (Test-Path "$($env:temp)\PSTools.zip"){
             Remove-Item "$($env:temp)\PSTools.zip" -Force
         }
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         (New-Object System.Net.WebClient).DownloadFile("https://download.sysinternals.com/files/PSTools.zip", "$($env:temp)\PSTools.zip")
         if (Test-Path "$($env:temp)\PSTools.zip"){
             Write-Host "Unzipping PSTools"
@@ -158,7 +170,10 @@ if (!(Get-Command "psexec.exe" -ErrorAction SilentlyContinue)){
 
 If ($OU){
     if (!(Get-Command "Get-ADComputer" -ErrorAction SilentlyContinue)){ 
-        Write-Host "Error. Get-ADComputer not found on system. You have to install the PowerShell Active Directory module order to query Active Directory. https://4sysops.com/archives/how-to-install-the-powershell-active-directory-module/" -ForegroundColor Red
+        Write-Host "Error. Get-ADComputer not found on system. You have to install the PowerShell Active Directory module order to query Active Directory." -ForegroundColor Red
+        Write-Host 'Windows 10: Get-WindowsCapability -Online |? {$_.Name -like "*RSAT.ActiveDirectory*" -and $_.State -eq "NotPresent"} | Add-WindowsCapability -Online'
+        Write-Host "Server: Install-WindowsFeature RSAT-AD-PowerShell"
+        Write-Host "Restart console after installation"
         Stop-Transcript
         Exit 1
     }
@@ -199,7 +214,7 @@ Else{
 }
 ForEach ($Computer in $ComputerList) {
     Write-Host "Processing computer $Computer"
-    $Destination = "\\$Computer\C$\Temp\print_drivers.printerExport"
+    $Destination = "\\$Computer\C$\Temp\printer_drivers.printerExport"
     try {
     if (-not(Test-Path "\\$Computer\C$\Temp\")) {
         mkdir "\\$Computer\C$\Temp\"
@@ -212,10 +227,10 @@ ForEach ($Computer in $ComputerList) {
     Write-Host "Launching installation using PSExec in $Computer. This may take a while, please be patient..."
     try {
         if ($usingCredential) {
-            psexec.exe /accepteula -h -i "\\$Computer" -u $UserName -p $Password C:\Windows\System32\spool\tools\Printbrm.exe -F C:\Temp\print_drivers.printerExport -R
+            psexec.exe /accepteula -h -i "\\$Computer" -u $UserName -p $Password C:\Windows\System32\spool\tools\Printbrm.exe -F C:\Temp\printer_drivers.printerExport -R
         }
         else {
-            psexec /accepteula -h "\\$Computer" C:\Windows\System32\spool\tools\Printbrm.exe -F C:\Temp\print_drivers.printerExport -R
+            psexec /accepteula -h "\\$Computer" C:\Windows\System32\spool\tools\Printbrm.exe -F C:\Temp\printer_drivers.printerExport -R
         }
     } catch {
         Write-Host "PSExec return an error. Check console output above"
