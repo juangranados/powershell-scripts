@@ -1,28 +1,67 @@
+<#PSScriptInfo
+
+.VERSION 1.0
+
+.GUID 1069276e-50b4-414a-ae8c-b8801445ae7e
+
+.AUTHOR Juan Granados
+
+.COPYRIGHT 2021 Juan Granados
+
+.TAGS SQL Server WID Windows Internal Database backup mail email rotation network share
+
+.LICENSEURI https://raw.githubusercontent.com/juangranados/powershell-scripts/main/LICENSE
+
+.PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/SQL%20Server%20Backup
+
+.EXTERNALMODULEDEPENDENCIES
+
+.RELEASENOTES
+    Initial release
+#>
+
 <#
 .SYNOPSIS
     Full and Log Backup of SQL Server instance databases with SMO 
 .DESCRIPTION
-    This script perform a instance databases backup of a SQL Server in to a zip file.
-    Usage: SQLBackup.ps1 [-BackupDirectory <string>] [-DataBases <string[]>] [-Instance <string>] [-SimpleBackup <True | False>] [-RetainDays <int>] [TempDirectory <string>] [SMTPServer <string>] [Recipient <string[]>] [Sender <string>] [Username <string>] [Password <string>] [-SSL <True | False>] [Port <int>] [WriteEvent <True | False>] 
-    Requires Powershell comunity extensions: Install-Module -Name Pscx
+    Performs Full and Log Backup of SQL Server instance databases with SMO in a zip file and sends an email with the result.
+    
+    Deletes backups older than n days. 
+    
+    For detailed how to use, run: Get-Help BackupSQL.ps1 -Full
+    
+    Requisites to run backup in a computer without SQL Server installed
+    
+    1. Navigate to: https://www.microsoft.com/en-US/download/details.aspx?id=55992 and install SQLSysClrTypes.msi
+    
+    2. Run from PowerShell
+        - Register-PackageSource -provider NuGet -name nugetRepository -location https://www.nuget.org/api/v2
+        - Install-Package Microsoft.SqlServer.SqlManagementObjects  
+    
+    3. Run from PowerShell: Install-Module -Name SqlServer
 .PARAMETER BackupDirectory
     Directory where zip file will be saved. UNC paths are supported. 
-    Default "...\My Documents\SQLBackup\"
+    Default "...\My Documents\SQLBackup"
+    Example: \\SRV-FS01\Backups\SQL01
 .PARAMETER DataBases
     Array of databases to backup. 
-    If empty all instance databases will be saved. 
+    If empty all instance databases will be saved.
+    Example: BEDB,msdb,model
 .PARAMETER Instance
     Instance Name. 
     Default: default instance.
-.PARAMETER SimpleBackup
-    True (default): Copy only database files
-    False: Copy database and logs
+    Example: SQLSVR01\BKUPEXEC
+.PARAMETER FullBackup
+    Copy database and logs
 .PARAMETER RetainDays
     Days to keep backups in BackupDirectory. Backups prior to this number of days will be deleted.
-    Default: keeps all backups  
+    Default: keeps all backups
+    Example: 30
 .PARAMETER TempDirectory
-    Temporary directory to save backups files in order to make a zip file. 
-    Default "C:\temp\SQLBackup\"
+    Temporary directory to save backups files in order to make a zip file.
+    Warning: this folder will be deleted after backup.
+    Default "C:\temp\SQLBackup"
+    Example: E:\SQLBackupTemp
 .PARAMETER SMTPServer
     Sets smtp server in order to sent an email with backup result.
     Default: None
@@ -46,10 +85,12 @@
     Default: 25
 .PARAMETER WriteEvent
     Writes an event with script result in Windows Application Event Log
-    Default: False
 .EXAMPLE
     Backup default instance databases to a network share
     C:\PS>.\BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL
+.EXAMPLE
+    Backup WID to a network share
+    BackupSQL.ps1 -BackupDirectory "\\MV0SRV-C01\Backups" -Instance "\\.\pipe\MICROSOFT##WID\tsql\query"
 .EXAMPLE
     Backup default instance databases to a network share and send an email with result using gmail
     C:\PS>.\BackupSQL.ps1 -BackupDirectory \\FS-SERVER01\BackupSQL -SMTPServer smtp.gmail.com -Recipient jgranados@contoso.com,administrator@contoso.com -Sender backupSQL@gmail.com -Username backupSQL@gmail.com -Password Pa$$W0rd -SSL True -Port 587
@@ -63,29 +104,29 @@
 .EXAMPLE
     Backup only specified databases of a named instance
     C:\PS>.\BackupSQL.ps1 -Instance SQLSVR01\BKUPEXEC -DataBases BEDB,msdb,model
-
+.LINK
+    https://github.com/juangranados/powershell-scripts/tree/main/SQL%20Server%20Backup
 .NOTES
     Author: Juan Granados 
 #>
     Param(
         [Parameter(Mandatory=$false,Position=0)] 
         [ValidateNotNullOrEmpty()]
-        [string]$BackupDirectory=[environment]::getfolderpath("mydocuments") + "\SQLBackup\",
+        [string]$BackupDirectory=[environment]::getfolderpath("mydocuments") + "\SQLBackup",
         [Parameter(Mandatory=$false,Position=1)] 
         [ValidateNotNullOrEmpty()]
         [string[]]$DataBases="all",
         [Parameter(Mandatory=$false,Position=2)] 
         [ValidateNotNullOrEmpty()]
         [string]$Instance=$env:computerName,
-        [Parameter(Mandatory=$false,Position=3)] 
-        [ValidateSet("True","False")] 
-        [string]$SimpleBackup="True",
+        [Parameter] 
+		[switch]$FullBackup,
         [Parameter(Mandatory=$false,Position=4)] 
         [ValidateRange(0,36500)]
         [int]$RetainDays=0,
         [Parameter(Mandatory=$false,Position=5)] 
         [ValidateNotNullOrEmpty()]
-        [string]$TempDirectory = "C:\temp\SQLBackup\",
+        [string]$TempDirectory = "C:\temp\SQLBackup",
         [Parameter(Mandatory=$false,Position=6)] 
         [ValidateNotNullOrEmpty()]
         [string]$SMTPServer="None",
@@ -107,50 +148,27 @@
         [Parameter(Mandatory=$false,Position=12)] 
         [ValidateNotNullOrEmpty()]
         [int]$Port=25,
-        [Parameter(Mandatory=$false,Position=13)] 
-        [ValidateSet("True","False")]
-        [string]$WriteEvent="False"
+        [Parameter] 
+		[switch]$WriteEvent
     )
-
+Import-Module SQLServer -ErrorAction SilentlyContinue
 [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.ConnectionInfo')            
 [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.Management.Sdk.Sfc')            
 [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')            
 
 # Required if SQL Server 2008 (SMO 10.0).            
 [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMOExtended')            
+$ErrorActionPreference = "Stop"
 
 # Function to find dabatabase in $Databases[] variable
-Function Get-Database
-{
+Function Get-Database {
     Param([string]$Database)
-    for($i = 0; $i -le $Databases.length -1; $i++)
-    {
-        if ($Databases[$i] -eq $Database)
-            {$true}
+    for($i = 0; $i -le $Databases.length -1; $i++) {
+        if ($Databases[$i] -eq $Database) {
+            return $true
+        }
     }
-    $false
-}
-
-# Function to check for Module Dependencies
-Function Get-MyModule
-{
-    Param([string]$name)
-    if(-not(Get-Module -name $name))
-    {
-    if(Get-Module -ListAvailable |
-    Where-Object { $_.name -eq $name })
-    {
-    Import-Module -Name $name
-    $true
-    } #end if module available then import
-    else { $false } #module not available
-    } # end if not module
-    else { $true } #module already loaded
-} #end function get-MyModule 
-
-# Write-zip needs module PSCX: Install-Module -Name Pscx
-If(! (Get-MyModule –name "Pscx")) {
-    Write-Host "Pscx module is not installed on this system. Please run: Install-Module -Name Pscx and run script again."
+    return $false
 }
 
 # Variable to measure script execution time
@@ -163,68 +181,52 @@ $DataSum = 0
 $timestamp = Get-Date -format yyyy-MM-dd-HH-mm-ss
 
 # Create application event source 
-if ($WriteEvent -eq "True")
-{
-    if (!(Get-Eventlog -LogName "Application" -Source "BackupSQL"))
-        {New-Eventlog -LogName "Application" -Source "BackupSQL"}
+if ($WriteEvent) {
+    if (!(Get-Eventlog -LogName "Application" -Source "BackupSQL")) {
+        New-Eventlog -LogName "Application" -Source "BackupSQL"
+    }
 }
-
+if ($TempDirectory -eq $BackupDirectory) {
+    Write-Output "BackupDirectory can not be the same as TempDirectory. Script can not continue"
+    if ($WriteEvent) {
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "BackupDirectory can not be the same as TempDirectory. Script can not continue."
+    }
+    Exit
+}
+if ($TempDirectory.Chars($TempDirectory.Length - 1) -eq '\') {
+        $TempDirectory = ($TempDirectory.TrimEnd('\'))
+}
+if ($BackupDirectory.Chars($BackupDirectory.Length - 1) -eq '\') {
+        $BackupDirectory = ($BackupDirectory.TrimEnd('\'))
+}
 # Check if backup directory exist and try to create if not
-New-Item -ErrorAction Ignore -ItemType directory -Path $BackupDirectory
-
-# Test if backup folder exists
-if(!(Test-Path -Path $BackupDirectory))
-    {
-     Write-Output "$BackupDirectory does not exists and can not be created. Script can not continue"
-     if ($WriteEvent -eq "True")
-     {
-        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed. $BackupDirectory does not exists and can not be created."
-     }
-     Exit 
-    }      
+if(!(Test-Path -Path $BackupDirectory)) {
+    try {
+        New-Item -ItemType directory -Path $BackupDirectory
+    } catch {
+        Write-Output "$BackupDirectory does not exists and can not be created. Script can not continue"
+        if ($WriteEvent) {
+           Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed. $BackupDirectory does not exists and can not be created."
+        }
+        Exit
+    }
+}      
 
 # Check if local directory exist and try to create if not
-New-Item -ErrorAction Ignore -ItemType directory -Path $TempDirectory
-
-# Test if local folder exists
-if(!(Test-Path -Path $TempDirectory))
-    {
-     Write-Output "$TempDirectory does not exists and can not be created. Script can not continue"
-     if ($WriteEvent -eq "True")
-     {
-         Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed.$TempDirectory does not exists and can not be created."
-     }
-     Exit 
+if(!(Test-Path -Path $TempDirectory)) {
+    try {
+        New-Item -ItemType directory -Path $TempDirectory
+    } catch {
+         Write-Output "$TempDirectory does not exists and can not be created. Script can not continue"
+         if ($WriteEvent) {
+             Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed.$TempDirectory does not exists and can not be created."
+         }
+         Exit 
     }
+}
 
-# Preparing mail sending  
-if($SMTPServer -ne "None")
-    {
-        #Creating a Mail object
-        $msg = new-object Net.Mail.MailMessage
-
-        #Creating SMTP server object
-        $smtp = new-object Net.Mail.SmtpClient($SMTPServer,$Port)
-
-        #Email structure
-        $msg.From = $Sender
-        $msg.ReplyTo = $Sender
-        ForEach($mail in $Recipient)
-        {
-            $msg.To.Add($mail)
-        }
-        if ($Username -ne "None" -and $Password -ne "None")
-            {
-                $smtp.Credentials = new-object System.Net.NetworkCredential($Username, $Password)
-            }
-        if ($SSL -ne "False")
-            {
-                $smtp.EnableSsl = $true 
-            }
-     }
-try
-{
-     Write-Output "Starting backup"
+try {
+    Write-Output "Starting backup"
     # SQL Server
     $srv = New-Object Microsoft.SqlServer.Management.Smo.Server $Instance  
     
@@ -235,34 +237,32 @@ try
     Get-ChildItem –Path  $TempDirectory | Remove-Item
     
     # Copy databases            
-    foreach ($db in $srv.Databases)            
-    {
-        If( (($DataBases[0] -eq "all") -or (Get-Database $db.Name)) -and ($db.Name -ne "tempdb") )
-            {            
-                $timestamp = Get-Date -format yyyy-MM-dd-HH-mm-ss  
-                $backup = New-Object ("Microsoft.SqlServer.Management.Smo.Backup")        
-                $backup.Action = "Database"           
-                $backup.Database = $db.Name
-	            Write-Output "Copying $db"          
-                $backup.Devices.AddDevice($TempDirectory + $db.Name + "_full_" + $timestamp + ".bak", "File")            
-                $backup.BackupSetDescription = "Full backup of " + $db.Name + " " + $timestamp            
-                $backup.Incremental = 0            
-                # Full backup            
-                $backup.SqlBackup($srv)     
-                # Log backup if database recovery mode is not simple         
-                If (($db.RecoveryModel -ne 3) -and ($SimpleBackup -eq "False"))            
-                {                     
-                    $backup = New-Object ("Microsoft.SqlServer.Management.Smo.Backup")            
-                    $backup.Action = "Log"            
-                    $backup.Database = $db.Name            
-                    $backup.Devices.AddDevice($TempDirectory + $db.Name + "_log_" + $timestamp + ".trn", "File")            
-                    $backup.BackupSetDescription = "Log backup of " + $db.Name + " " + $timestamp            
-                    # Truncate log prior to backup            
-                    $backup.LogTruncation = "Truncate"
-                    # Log backup         
-                    $backup.SqlBackup($srv)            
-                }            
-            }
+    foreach ($db in $srv.Databases) {
+        If( (($DataBases[0] -eq "all") -or (Get-Database $db.Name)) -and ($db.Name -ne "tempdb") ) {            
+            $timestamp = Get-Date -format yyyy-MM-dd-HH-mm-ss  
+            $backup = New-Object ("Microsoft.SqlServer.Management.Smo.Backup")        
+            $backup.Action = "Database"           
+            $backup.Database = $db.Name
+	        Write-Output "Copying $db"          
+            $backup.Devices.AddDevice("$TempDirectory\" + $db.Name + "_full_" + $timestamp + ".bak", "File")            
+            $backup.BackupSetDescription = "Full backup of " + $db.Name + " " + $timestamp            
+            $backup.Incremental = 0            
+            # Full backup            
+            $backup.SqlBackup($srv)     
+            # Log backup if database recovery mode is not simple         
+            If (($db.RecoveryModel -ne 3) -and ($FullBackup))            
+            {                     
+                $backup = New-Object ("Microsoft.SqlServer.Management.Smo.Backup")            
+                $backup.Action = "Log"            
+                $backup.Database = $db.Name            
+                $backup.Devices.AddDevice("$TempDirectory\" + $db.Name + "_log_" + $timestamp + ".trn", "File")            
+                $backup.BackupSetDescription = "Log backup of " + $db.Name + " " + $timestamp            
+                # Truncate log prior to backup            
+                $backup.LogTruncation = "Truncate"
+                # Log backup         
+                $backup.SqlBackup($srv)            
+            }            
+        }
     }
 
     # Creation time
@@ -270,96 +270,109 @@ try
 
     # Set zip file and delete '\'
     $InstanceName = $Instance -Replace "\\","-"
-    $ZipFile = "$TempDirectory$timestamp" + "_" + $InstanceName + "_Backup.zip"
-    $ZipFileRemote = "$BackupDirectory$timestamp" + "_" + $InstanceName + "_Backup.zip"
-
+    $ZipFile = "$BackupDirectory\$timestamp" + "_" + $InstanceName + "_Backup.zip"
+    If(Test-path $ZipFile) {
+        Remove-item $ZipFile -Force
+    }
+    Write-Output "Creating zip file in $BackupDirectory"
     # Zip compression
-    Get-Childitem $TempDirectory -Recurse | Write-Zip -IncludeEmptyDirectories -OutputPath $ZipFile -EntryPathRoot $TempDirectory
-
-    # Copy zip file to backup folder
-    Copy-Item -Path $ZipFile -Destination $ZipFileRemote
+    Add-Type -assembly "system.io.compression.filesystem"
+    [io.compression.zipfile]::CreateFromDirectory($TempDirectory, $ZipFile) 
+    #Get-Childitem $TempDirectory -Recurse | Write-Zip -IncludeEmptyDirectories -OutputPath $ZipFile -EntryPathRoot $TempDirectory
 
     # Show information about the size of file copied
-    $DataSum = "{0:N3}" -f (((Get-Item $ZipFileRemote).length) / 1MB)
-    Write-Output = "Backup $ZipFileRemote stored. $DataSum MB copied"
+    $DataSum = "{0:N3}" -f (((Get-Item $ZipFile).length) / 1MB)
+    Write-Output "Backup $ZipFile stored. $DataSum MB copied"
     
-    # Show information about the size of file copied on Windows registry
-    if ($WriteEvent -eq "True")
-    {
-        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 1 –Message "Backup $ZipFileRemote stored. $DataSum MB copied"
+    # Show information about the size of file copied on Windows Event Log
+    if ($WriteEvent) {
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 1 –Message "Backup $ZipFile stored. $DataSum MB copied"
     }
+    # Preparing mail sending  
+    if($SMTPServer -ne "None") {
+        #Creating a Mail object
+        $msg = new-object Net.Mail.MailMessage
 
+        #Creating SMTP server object
+        $smtp = new-object Net.Mail.SmtpClient($SMTPServer,$Port)
+
+        #Email structure
+        $msg.From = $Sender
+        $msg.ReplyTo = $Sender
+        ForEach($mail in $Recipient) {
+            $msg.To.Add($mail)
+        }
+        if ($Username -ne "None" -and $Password -ne "None") {
+                $smtp.Credentials = new-object System.Net.NetworkCredential($Username, $Password)
+        }
+        if ($SSL -ne "False") {
+                $smtp.EnableSsl = $true 
+        }
+    }
     # Sending email with backup result
-    if ($SMTPServer -ne "None")
-    {
+    if ($SMTPServer -ne "None") {
         #Email subject
         $msg.subject = $Instance + " SQL Backup Success"
         #Email body
-        $msg.body = "Backup $ZipFileRemote stored. $DataSum MB copied"
+        $msg.body = "Backup $ZipFile stored. $DataSum MB copied"
         #Sending email
         try{
             Write-Output "Sending email"
             $smtp.Send($msg)
             Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 4 –Message "Success backup result sent to $Recipient"
-           }catch
-                {
-                    # Write error on application event log
-                    if ($WriteEvent -eq "True")
-                    {
-                        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
-                    }
-                    write-host "Caught an exception:" -ForegroundColor Red
-                    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-                    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red 
-                }
+           } catch {
+            # Write error on application event log
+            if ($WriteEvent) {
+                Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+            }
+            write-host "Caught an exception:" -ForegroundColor Red
+            write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+            write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red 
+        }
     }
-    # Delete temp directory         
+    # Delete temp directory
+    Write-Output "Deleting folder $TempDirectory"         
     Remove-Item -Recurse -ErrorAction SilentlyContinue -Confirm:$false –Path $TempDirectory
     
     # Delete old files from backup directory
-    if ($RetainDays -ne 0)
-        {get-childitem $BackupDirectory -recurse | where {$_.lastwritetime -lt (get-date).adddays(-$RetainDays) -and -not $_.psiscontainer} |% {remove-item $_.fullname -force}}
+    if ($RetainDays -ne 0) {
+        get-childitem $BackupDirectory -recurse | where {$_.lastwritetime -lt (get-date).adddays(-$RetainDays) -and -not $_.psiscontainer} |% {remove-item $_.fullname -force}
+    }
     
     # Get execution time
     $endDTM = (Get-Date)
     
     Write-Output "Execution time: $(($endDTM-$startDTM).hours) hours $(($endDTM-$startDTM).Minutes) minutes $(($endDTM-$startDTM).Seconds) seconds"
-}
-catch
-    {
-        write-host "Caught an exception:" -ForegroundColor Red
-        write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-        write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-        # Delete temp directory         
-        Remove-Item -Recurse -ErrorAction SilentlyContinue -Confirm:$false –Path $TempDirectory
-        Write-Host "Script can not continue."
-        # Write error on application event log
-        if ($WriteEvent -eq "True")
-        {
-            Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
-        }
-        # Sending email with backup result
-        if ($SMTPServer -ne "None")
-        {
-            #Email subject
-            $msg.subject = $Instance + " SQL Backup Error"
-            #Email body
-            $msg.body = "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
-            #Sending email
-            Write-Output "Sending email"
-            try{
-            $smtp.Send($msg)
-            Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 4 –Message "Error backup result sent to $Recipient"
-            }catch
-                {
-                    # Write error on application event log
-                    if ($WriteEvent -eq "True")
-                    {
-                        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
-                    }
-                    write-host "Caught an exception:" -ForegroundColor Red
-                    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
-                    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
-                }
+} catch {
+    write-host "Caught an exception:" -ForegroundColor Red
+    write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+    write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
+    # Delete temp directory         
+    Remove-Item -Recurse -ErrorAction SilentlyContinue -Confirm:$false –Path $TempDirectory
+    Write-Host "Script can not continue."
+    # Write error on application event log
+    if ($WriteEvent) {
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 2 –Message "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+    }
+    # Sending email with backup result
+    if ($SMTPServer -ne "None") {
+        #Email subject
+        $msg.subject = $Instance + " SQL Backup Error"
+        #Email body
+        $msg.body = "SQL Backup Failed" + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+        #Sending email
+        Write-Output "Sending email"
+        try{
+        $smtp.Send($msg)
+        Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Information –EventID 4 –Message "Error backup result sent to $Recipient"
+        } catch {
+            # Write error on application event log
+            if ($WriteEvent) {
+                Write-EventLog –LogName Application –Source "BackupSQL" –EntryType Error –EventID 3 –Message "Error sending mail. " + "Exception Type: $($_.Exception.GetType().FullName)" + ". Exception Message: $($_.Exception.Message)"
+            }
+            write-host "Caught an exception:" -ForegroundColor Red
+            write-host "Exception Type: $($_.Exception.GetType().FullName)" -ForegroundColor Red
+            write-host "Exception Message: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
+}
