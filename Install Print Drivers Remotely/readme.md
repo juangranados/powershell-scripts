@@ -66,3 +66,10 @@ Default: My Documents
 *Example: C:\Logs*
 
 **Credential**: Script will ask for an account to perform remote installation.
+
+## Remote installation examples
+```powershell
+Install-PrinterExportRemoteComputers.ps1 -printerExportFile "\\MV-SRV-PR01\Drivers\print_drivers.printerExport" -OU "OU=RDS,OU=Datacenter,DC=CONTOSO,DC=COM"  
+Install-PrinterExportRemoteComputers.ps1 -printerExportFile "\\MV-SRV-PR01\Drivers\print_drivers.printerExport" -ComputerList SRVRSH-001,SRVRSH-002,SRVRSH-003 -Credential -LogPath C:\Temp\Logs
+Install-PrinterExportRemoteComputers.ps1 -printerExportFile "\\MV-SRV-PR01\Drivers\print_drivers.printerExport" -CSV "C:\scripts\computers.csv"
+```
