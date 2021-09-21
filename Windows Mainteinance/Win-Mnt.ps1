@@ -31,7 +31,7 @@
 .PARAMETER kas
     Runs Kaspersky Virus Removal Tool
     Default: false
-PARAMETER LogPath
+.PARAMETER LogPath
     Path where save log file.
     Default: My Documents
 .EXAMPLE
