@@ -25,6 +25,12 @@
 .PARAMETER defender
     Runs Windows Defender Update and Quick Scan
     Default: false
+.PARAMETER adaware
+    Runs adaware update and quick/boot Scan
+    Default: false Kaspersky Virus Removal Tool
+.PARAMETER kas
+    Runs Kaspersky Virus Removal Tool
+    Default: false
 PARAMETER LogPath
     Path where save log file.
     Default: My Documents
@@ -34,6 +40,9 @@ PARAMETER LogPath
 .EXAMPLE
     Runs sfc and defrag with custom log.
     Win-Mnt.ps1 -sfc -defrag -logPath "\\INFSRV001\Scripts$\Mainteinance\Logs"
+.EXAMPLE
+    Runs sfc, dism and adaware scan.
+    Win-Mnt.ps1 -sfc -dism -adaware
 .NOTES 
     Author: Juan Granados
 #>
@@ -49,6 +58,10 @@ Param(
     [switch]$wmi,
     [Parameter()] 
     [switch]$defender,
+    [Parameter()] 
+    [switch]$adaware,
+    [Parameter()] 
+    [switch]$kas,
     [Parameter()] 
     [switch]$defrag,
     [Parameter()] 
@@ -99,8 +112,59 @@ if ($defender -or $all) {
         Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' | Where-Object {$_.TimeCreated -ge $startTime} | Select-Object -ExpandProperty Message
     } catch {
         Write-Output "An error has ocurred: $($_.Exception.Message)"
+    } 
+}
+if ($adaware -or $all) {
+    Write-Host "-----------------------------------------"
+    Write-Host "Downloading, updating and running adaware"
+    Write-Host "-----------------------------------------"
+    Write-Host "Downloading adawareCommandLineScanner"
+    $(New-Object System.Net.WebClient).DownloadFile("https://www.adaware.com/sites/default/files/av/command-line-scanner/64/AdAwareCommandLineScanner.zip#inline-64bit","$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip")
+    if (Test-Path "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip") {
+        Write-Host "Extracting AdAwareCommandLineScanner.zip"
+        Expand-Archive -LiteralPath "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip" "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner" -Force
+        Remove-Item "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip" -Force
+        if (Test-Path "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner\AdAwareCommandLineScanner.exe") {
+            Write-Host "Updating definitions"
+            Start-Process "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner\AdAwareCommandLineScanner.exe" "--updatedefs" -Wait
+            Write-Host "Performing quick scan"
+            Start-Process "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner\AdAwareCommandLineScanner.exe" "--quick --disinfect --scan-result $($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_quick_scan.xml" -Wait
+            $xml = [xml](Get-Content "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_quick_scan.xml")
+            if ($xml.Summary.InfectedObjects.ChildNodes.Count -eq 0) {
+                Write-Host "No infected items found"
+            } else {
+                Write-Host "$($xml.Summary.InfectedObjects.ChildNodes.Count) infected items found!"
+                $xml.Summary.InfectedObjects.ChildNodes
+            }
+            Write-Host "Performing boot scan"
+            Start-Process "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner\AdAwareCommandLineScanner.exe" "--boot --disinfect --scan-result $($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_boot_scan.xml" -Wait
+            $xml = [xml](Get-Content "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_boot_scan.xml")
+            if ($myxml.Summary.InfectedObjects.ChildNodes.Count -eq 0) {
+                Write-Host "No infected items found"
+            } else {
+                Write-Host "$($myxml.Summary.InfectedObjects.ChildNodes.Count) infected items found!"
+                $myxml.Summary.InfectedObjects.ChildNodes
+            }
+        } else {
+            Write-Host "Error extracting adawareCommandLineScanner"
+        }
+    } else {
+        Write-Host "Error downloading adawareCommandLineScanner"
     }
-   
+}
+if ($kas -or $all) {
+    Write-Host "----------------------------"
+    Write-Host "Downloading and running KVRT"
+    Write-Host "----------------------------"
+    Write-Host "Downloading KVRT"
+    $(New-Object System.Net.WebClient).DownloadFile("https://devbuilds.s.kaspersky-labs.com/devbuilds/KVRT/latest/full/KVRT.exe","$env:LOCALAPPDATA\Temp\KVRT.exe")
+    if (Test-Path "$env:LOCALAPPDATA\Temp\KVRT.exe") {
+        Write-Host "Running KVRT"
+        $kvrtProcess = Start-Process "$env:LOCALAPPDATA\Temp\KVRT.exe" "-accepteula -adinsilent -silent -processlevel 2 -fupdate" -Wait -NoNewWindow -RedirectStandardOutput "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_kvrt_scan.txt"
+        Get-Content -Path "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_kvrt_scan.txt"
+    } else {
+        Write-Host "Error downloading KVRT"
+    }
 }
 if ($defrag -or $all) {
     Write-Host "----------------------"
@@ -131,9 +195,9 @@ if ($defrag -or $all) {
     }
 }
 if ($update -or $all) {
-    Write-Host "--------------------------"
+    Write-Host "------------------"
     Write-Host "Installing Updates"
-    Write-Host "--------------------------"
+    Write-Host "------------------"
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     Install-PackageProvider -Name NuGet -Force -Confirm:$false
     Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
