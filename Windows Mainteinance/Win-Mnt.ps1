@@ -30,7 +30,7 @@
     Default: false
 .PARAMETER adaware
     Runs adaware update and quick/boot Scan
-    Default: false Kaspersky Virus Removal Tool
+    Default: false
 .PARAMETER kas
     Runs Kaspersky Virus Removal Tool
     Default: false
