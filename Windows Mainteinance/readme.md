@@ -1,66 +1,49 @@
-# PrintNightmare - Install printer drivers on remote computers using printerExport file
+# Windows Maintenance
 
-[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Install-PrinterDriversRemotely.ps1)
+[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Windows%20Mainteinance/Win-Mnt.ps1)
 
-On August 10, Microsoft posted a [blog post](https://msrc-blog.microsoft.com/2021/08/10/point-and-print-default-behavior-change/) about changes to the point and print.
-
-After the August patches, standard users cant add any printers. This  means that you need to pre-install all drivers on your workstations or Remote Session Host servers.
-
-In [KB5005652](https://support.microsoft.com/topic/873642bf-2634-49c5-a23b-6d8e9a302872) documentation, Microsoft recommends this four possible solutions after install KB5005652 patch:
-
-![Solutions to KB5005652](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/1.PNG)
-
-This script allows remote printer drivers installation on a group of computers using printerExport file and [PSExec](https://docs.microsoft.com/en-us/sysinternals/downloads/pstools). If PSExec is not found on computer, script asks to the user for download it and extract in system folder.
-
-To generate a printer export file with all printer drivers, run `PrintbrmUI.exe` from the computer or server you want to export them. 
-
-Be carefully because this tool exports all printers and ports too. I recommend install all drivers in a test computer without printers and export them using `PrintbrmUI.exe`. Alternatively, you can export all from print server, import in a test computer, delete printers and ports and export again to obtain a printerExport file with only drivers.
-
-![PrintbrmUI screenshot](https://github.com/juangranados/powershell-scripts/blob/main/Install%20Print%20Drivers%20Remotely/2.PNG?raw=true)
+Performs several commands to check and repair a Windows Computer, Server or Workstation.
 
 ## Parameters
 
-**printerExportFile**: Path to the printerExport file.
+- **all** runs all commands.
+- **antivirus** runs all antivirus: Windows Defender, Karspersky, McAfee, ClamAV and Adaware.
+- **sfc** runs SFC /scannow.
+- **dism** runs DISM /Online /Cleanup-Image /RestoreHealth
+- **wmi** runs Winmgmt /salvagerepository
+- **defrag** defrag drives if required (Fragmentation > 10%)
+- **update** install Microsoft updates (except drivers)
+- **defender** runs Windows Defender Update and Quick Scan
+  **adaware** runs adaware update and quick/boot Scan
+  **kas** runs Kaspersky Virus Removal Tool
+  **clamav** runs ClamAV full scan of C:\
+  **mcafee** runs McAfee Stinger
+  **LogPath** path where save log file.
+  *Default: My Documents*
 
-*Example: \\\SRVFS01\Drivers\drivers.printerExport*
+## Examples
 
-**ComputerList**: List of computers in install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
-
-*Example: Computer001,Computer002,Computer003 (Without quotation marks)*
-
-**OU**: OU containing computers in which install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
-RSAT for AD module for PowerShell must be installed in order to query AD.
-If you run script from a Domain Controller, AD module for PowerShell is already enabled.
-
-To install it from Windows 10 computer
+Runs all commands.
 
 ```powershell
-Get-WindowsCapability -Online |? {$_.Name -like "*RSAT.ActiveDirectory*" -and $_.State -eq "NotPresent"} | Add-WindowsCapability -Online
+Win-Mnt.ps1 -all
 ```
 
-To install it from server
+Runs all antivirus.
 
 ```powershell
-Install-WindowsFeature RSAT-AD-PowerShell
+Win-Mnt.ps1 -antivirus
 ```
 
-*Example: : "OU=RDSH,OU=Servers,DC=CONTOSO,DC=COM"*
+ Runs sfc and defrag with custom log.
 
-**CSV**: CSV file containing computers in which install printer drivers. You can only use one source of target computers: ComputerList, OU or CSV.
-
-*Example: "C:\Scripts\Computers.csv"*
-CSV Format:
-
-```CSV
-Name
-RDSH01
-RDSH03
-RDSH02
+```powershell
+Win-Mnt.ps1 -sfc -defrag -logPath "\\INFSRV001\Scripts$\Mainteinance\Logs"
 ```
 
-**LogPath:** Path where save log file.
-Default: My Documents
+Runs sfc, dism and adaware scan.
 
-*Example: C:\Logs*
+```powershell
+Win-Mnt.ps1 -sfc -dism -adaware
+```
 
-**Credential**: Script will ask for an account to perform remote installation.
