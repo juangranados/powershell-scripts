@@ -14,11 +14,11 @@ Performs several commands to check and repair a Windows Computer, Server or Work
 - **defrag** defrag drives if required (Fragmentation > 10%)
 - **update** install Microsoft updates (except drivers)
 - **defender** runs Windows Defender Update and Quick Scan
-  **adaware** runs adaware update and quick/boot Scan
-  **kas** runs Kaspersky Virus Removal Tool
-  **clamav** runs ClamAV full scan of C:\
-  **mcafee** runs McAfee Stinger
-  **LogPath** path where save log file.
+- **adaware** runs adaware update and quick/boot Scan
+- **kas** runs Kaspersky Virus Removal Tool
+- **clamav** runs ClamAV full scan of C:\
+- **mcafee** runs McAfee Stinger
+- **LogPath** path where save log file.
   *Default: My Documents*
 
 ## Examples
