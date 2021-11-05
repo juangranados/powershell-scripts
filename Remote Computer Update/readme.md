@@ -5,6 +5,8 @@
 Installs Windows Updates on local or remote computer, but in order to run in remote computer, it has to be run from [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec).
 It uses [RZGet](https://github.com/rzander/ruckzuck/releases) to update computer software.
 
+![Screenshot](https://github.com/juangranados/powershell-scripts/raw/main/Remote%20Computer%20Update/screenshot.png)
+
 ## Parameters
 
 ### logPath
