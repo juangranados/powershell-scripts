@@ -1,36 +1,97 @@
-#Requires -RunAsAdministrator
-# It has to be executed from psexec: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
-# Download it and copy to C:\Windows\System32
-# psexec.exe -s \\ComputerName powershell.exe Set-ExecutionPolicy Unrestricted -Force
-# psexec.exe -s \\ComputerName powershell.exe \\ES-CPD-BCK02\scripts\WindowsUpdate\Update-Computer.ps1
-# It uses RZGet.exe to update computer software: https://github.com/rzander/ruckzuck/releases
-## ------------------------------------------------------------------
-# Variables
-## ------------------------------------------------------------------
-$logPath = "\\ES-CPD-BCK02\scripts\WindowsUpdate\Log" # Log file path.
-$scheduleReboot = $true # if true, a reboot wil be scheduled if needed.
-$rebootTime = 2 # Number of hours after finish update to reboot computer.
-$rebootNow = $false # if true, reboots after finish update.
-$showRebootMessage = $true # if true, shows a message to user
-$rebootMessage = "Se va a reiniciar el equipo dentro de $($rebootTime) horas para terminar de instalar las actualizaciones de Windows. Por favor, cierra todo antes de esa hora o reinicia el equipo manualmente." # Reboot message
-$RZGetPath = "\\ES-CPD-BCK02\scripts\WindowsUpdate\RZGet.exe" # Path to RZGet.exe
-$RZGetArguments = 'update "7-Zip" "Google Chrome" "Notepad++" "Notepad++(x64)" "AdobeReader DC" "Putty" "WinSCP" "VLC" "JavaRuntime8" "JavaRuntime8x64" "KeePass" "Webex Meetings" "iTunes" "FileZilla" "Dell Command Update" "Dell Command Update W10"'
-## ------------------------------------------------------------------
-# Script
-## ------------------------------------------------------------------
-$timestamp = Get-Date -format yyyy-MM-dd-HH-mm
-if (-not (Test-Path $logPath)) {
-    if (-not (Test-Path C:\temp)) {
-        mkdir C:\temp
-    }
-    $ReportFile = "C:\temp\$($timestamp)_$($env:COMPUTERNAME).txt";
-} else {
-    $ReportFile = "$logPath\$($timestamp)_$($env:COMPUTERNAME).txt";
-}
+<#PSScriptInfo
 
-Start-Transcript $ReportFile
-$VerbosePreference='Continue'
-$ErrorActionPreference = "SilentlyContinue"
+.VERSION 1.0
+
+.GUID 5dc48422-ae3a-4b09-8510-5075b994a40f
+
+.AUTHOR Juan Granados
+
+.AUTHOR Juan Granados
+
+.COPYRIGHT 2021 Juan Granados
+
+.TAGS WSUS Windows Update Remote Software
+
+.LICENSEURI https://raw.githubusercontent.com/juangranados/powershell-scripts/main/LICENSE
+
+.PROJECTURI https://github.com/juangranados/powershell-scripts/tree/main/Remote%20Computer%20Update
+
+.RELEASENOTES Initial release
+
+#>
+
+<#
+.SYNOPSIS
+    Installs Windows Updates on local or remote computer.
+.DESCRIPTION
+    Installs Windows Updates on local or remote computer.
+    In order to run in remote computer, it has to be run from psexec: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
+    See examples below.
+    It uses RZGet.exe to update computer software: https://github.com/rzander/ruckzuck/releases
+.PARAMETER logPath
+    Log file path.
+    Default "Documents"
+    Example: "\\ES-CPD-BCK02\scripts\ComputerUpdate\Log"
+.PARAMETER scheduleReboot
+    Reboot wil be scheduled if needed.
+    Default: false
+.PARAMETER rebootHours
+    Number of hours after finish update to reboot computer.
+    Default: 2
+.PARAMETER rebootNow
+    Reboots after finish update.
+    Default: false
+.PARAMETER rebootMessage
+    Shows a message to user.
+    Default: none
+.PARAMETER RZGetPath
+    RZGet.exe path.
+    If path not found RZGet will not be called.
+    Default: none
+.PARAMETER RZGetArguments
+    RZGet.exe Arguments.
+    Default: update --all
+.EXAMPLE
+    Run remotely (PsExec needed: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)
+    Two options:
+    1 . Harcode parameters on script and run PsExec. 
+        psexec.exe -s \\ComputerName powershell.exe -ExecutionPolicy Bypass -file \\ES-CPD-BCK02\scripts\WindowsUpdate\Update-Computer.ps1
+    2. Use an script to run with parameters.
+        LaunchRemote.cmd: run LaunchRemote.ps1 with PsExec.
+        LaunchRemote.ps1: run Update-Computer.ps1 with arguments.
+    Scripts are on this GitHub folder.
+.EXAMPLE
+    Run locally
+    Update-Computer.ps1 -$logPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\Log" -scheduleReboot -rebootHours 2 -rebootMessage "Se va a reiniciar el equipo dentro de 2 horas para terminar de instalar las actualizaciones de Windows. Por favor, cierra todo antes de esa hora o reinicia el equipo manualmente" -RZGetPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\RZGet.exe" $RZGetArguments 'update "7-Zip" "Google Chrome" "Notepad++" "Notepad++(x64)" "AdobeReader DC" "Putty" "WinSCP" "VLC" "JavaRuntime8" "JavaRuntime8x64" "KeePass" "Webex Meetings" "iTunes" "FileZilla" "Dell Command Update" "Dell Command Update W10"'
+.LINK
+    https://github.com/juangranados/powershell-scripts/tree/main/Remote%20Computer%20Update
+.NOTES
+    Author: Juan Granados 
+#>
+
+Param(
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$logPath = [Environment]::GetFolderPath("MyDocuments"),
+    [Parameter()]
+    [switch]$scheduleReboot,
+    [Parameter(Mandatory = $false)] 
+    [ValidateRange(0, 100)]
+    [int]$rebootHours = 2,
+    [Parameter()]
+    [switch]$rebootNow,
+    [Parameter(Mandatory = $false)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$rebootMessage,
+    [Parameter(Mandatory = $false)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$RZGetPath,
+    [Parameter(Mandatory = $false)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$RZGetArguments = "update --all"
+)
+
+#Requires -RunAsAdministrator
 
 ## ------------------------------------------------------------------
 # function Get-PendingReboot
@@ -60,7 +121,7 @@ function Get-PendingReboot {
 
     #Check for Values
     if (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" | Select-Object -ExpandProperty "RebootInProgress" -ErrorAction SilentlyContinue) {
-       return $true
+        return $true
     }
 
     if (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" | Select-Object -ExpandProperty "PackagesPending" -ErrorAction SilentlyContinue) {
@@ -93,7 +154,7 @@ function Get-PendingReboot {
 ## ------------------------------------------------------------------
 function Invoke-Process {
     param
-        (
+    (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$FilePath,
@@ -102,9 +163,9 @@ function Invoke-Process {
         [ValidateNotNullOrEmpty()]
         [string]$ArgumentList,
 
-        [ValidateSet("Full","StdOut","StdErr","ExitCode","None")]
+        [ValidateSet("Full", "StdOut", "StdErr", "ExitCode", "None")]
         [string]$DisplayLevel
-        )
+    )
 
     $ErrorActionPreference = 'Stop'
 
@@ -121,49 +182,58 @@ function Invoke-Process {
         $p.StartInfo = $pinfo
         $p.Start() | Out-Null
         $result = [pscustomobject]@{
-        Title = ($MyInvocation.MyCommand).Name
-        Command = $FilePath
-        Arguments = $ArgumentList
-        StdOut = $p.StandardOutput.ReadToEnd()
-        StdErr = $p.StandardError.ReadToEnd()
-        ExitCode = $p.ExitCode
+            Title     = ($MyInvocation.MyCommand).Name
+            Command   = $FilePath
+            Arguments = $ArgumentList
+            StdOut    = $p.StandardOutput.ReadToEnd()
+            StdErr    = $p.StandardError.ReadToEnd()
+            ExitCode  = $p.ExitCode
         }
         $p.WaitForExit()
 
         if (-not([string]::IsNullOrEmpty($DisplayLevel))) {
-            switch($DisplayLevel) {
+            switch ($DisplayLevel) {
                 "Full" { return $result; break }
                 "StdOut" { return $result.StdOut; break }
                 "StdErr" { return $result.StdErr; break }
                 "ExitCode" { return $result.ExitCode; break }
-                }
             }
-        } catch {
-            Write-Host "An error has ocurred"
         }
+    }
+    catch {
+        Write-Host "An error has ocurred"
+    }
 }
 ## ------------------------------------------------------------------
 # Script start
 ## ------------------------------------------------------------------
+
+if (-not (Test-Path $logPath)) {
+    $logPath = [Environment]::GetFolderPath("MyDocuments")  
+} 
+$ReportFile = "$logPath\$(Get-Date -format yyyy-MM-dd-HH-mm)_$($env:COMPUTERNAME).txt";
+
+Start-Transcript $ReportFile
+
+$VerbosePreference = 'Continue'
+$ErrorActionPreference = "SilentlyContinue"
 
 if (Get-PendingReboot) {
     Write-Host "Computer has a pending reboot"
     Stop-Transcript
     Exit
 }
-if ($Error) {
-	$Error.Clear()
-}
-# http://blog.skadefro.dk/2014/05/windows-update-with-powershell.html
-# https://ashbrook.io/2018-04-03-queue-up-or-pre-download-windows-updates-with-powershell/
+
 $updateSearcher = New-Object -ComObject Microsoft.Update.Searcher
 $updateSession = New-Object -ComObject Microsoft.Update.Session
-
-Write-Host "Searching for applicable updates. Please wait..." -ForeGroundColor Yellow
+Write-Host "------------------------------------" -ForeGroundColor Cyan
+Write-Host "Searching applicable Windows updates" -ForeGroundColor Cyan
+Write-Host "------------------------------------" -ForeGroundColor Cyan
 $updateSearcherResult = $updateSearcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
 if ($updateSearcherResult.Updates.Count -eq 0) {
-	Write-Host "There are no applicable updates for this computer."
-} else {
+    Write-Host "There are no applicable updates for this computer."
+}
+else {
     Write-Host "$($updateSearcherResult.Updates.Count) updates available"
     $updatesSelected = New-Object -com Microsoft.Update.UpdateColl
     foreach ($update in $updateSearcherResult.Updates) {
@@ -173,85 +243,104 @@ if ($updateSearcherResult.Updates.Count -eq 0) {
         $updatesSelected.Add($update) | Out-Null
     }
    
-	$updateDownloader = $updateSession.CreateUpdateDownloader()
+    $updateDownloader = $updateSession.CreateUpdateDownloader()
     $updateDownloader.Updates = New-Object -com Microsoft.Update.UpdateColl
     $count = 1;
+    Write-Host "---------------------------" -ForeGroundColor Cyan
+    Write-Host "Downloading Windows updates" -ForeGroundColor Cyan
+    Write-Host "---------------------------" -ForeGroundColor Cyan
     
-    Write-Host "Downloading updates. Please wait..." -ForeGroundColor Yellow
-    foreach($update in $updatesSelected) {
-		Write-Host "$($count) of $($updateSearcherResult.Updates.Count) - Downloading Update: $($update.Title)"
+    foreach ($update in $updatesSelected) {
+        Write-Host "$($count) of $($updateSearcherResult.Updates.Count) - Downloading Update: $($update.Title)"
         $count++
-		if(!$update.IsDownloaded) {
+        if (!$update.IsDownloaded) {
 			
-			$updateDownloader.Updates.Add($update) | Out-Null
+            $updateDownloader.Updates.Add($update) | Out-Null
 
-			$downloadResult = $updateDownloader.Download()
+            $downloadResult = $updateDownloader.Download()
 
             if (($downloadResult.HResult -eq 0) -and ($downloadResult.ResultCode -eq 2)) {
                 Write-Host "Download succeeded" -ForegroundColor "Green"
-            } else {
-                Write-Warning  "Download error: $($result.HResult)"
+            }
+            else {
+                Write-Warning  "Download error: $($downloadResult.HResult)"
             }
 
             $updateDownloader.Updates.RemoveAt(0) | Out-Null
-		}
-	}
+        }
+    }
     $updateInstaller = $updateSession.CreateUpdateInstaller()
-    if($updateInstaller.ForceQuiet -eq $false) { 
+    if ($updateInstaller.ForceQuiet -eq $false) { 
         $updateInstaller.ForceQuiet = $true 
     }
     $updateInstaller.Updates = New-Object -com Microsoft.Update.UpdateColl
     $count = 1;
-    Write-Host "Installing updates. Please wait..." -ForeGroundColor Yellow
+    Write-Host "--------------------------" -ForeGroundColor Cyan
+    Write-Host "Installing Windows updates" -ForeGroundColor Cyan
+    Write-Host "--------------------------" -ForeGroundColor Cyan
     foreach ($update in $updatesSelected) {
-		Write-Host "$($count) of $($updateSearcherResult.Updates.Count) - Installing Update: $($update.Title)"
-        $count++;
+        if ($update.IsDownloaded) {
+            Write-Host "$($count) of $($updateSearcherResult.Updates.Count) - Installing Update: $($update.Title)"
+            $count++;
 
-		$updateInstaller.Updates.Add($update) | Out-Null
-		
-		$installationResult = $updateInstaller.Install()
+            $updateInstaller.Updates.Add($update) | Out-Null
+            
+            $installationResult = $updateInstaller.Install()
 
-        if (($installationResult.ResultCode -eq 2) -and ($installationResult.HResult -eq 0)) {
-			#$resultcode= @{0="Not Started"; 1="In Progress"; 2="Succeeded"; 3="Succeeded With Errors"; 4="Failed" ; 5="Aborted" }
-			Write-Host "Installation succeeded" -ForegroundColor "Green"
-		} elseif ($installationResult.ResultCode -eq 3) {
-			Write-Warning " Installation succeeded with errors $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
-		} elseif ($installationResult.ResultCode -eq 4) {
-			Write-Warning "Installation failed $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
-		} elseif ($installationResult.ResultCode -eq 5) {
-			Write-Warning "Installation aborted $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
-		}
+            if (($installationResult.ResultCode -eq 2) -and ($installationResult.HResult -eq 0)) {
+                Write-Host "Installation succeeded" -ForegroundColor "Green"
+            }
+            elseif ($installationResult.ResultCode -eq 3) {
+                Write-Warning " Installation succeeded with errors $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
+            }
+            elseif ($installationResult.ResultCode -eq 4) {
+                Write-Warning "Installation failed $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
+            }
+            elseif ($installationResult.ResultCode -eq 5) {
+                Write-Warning "Installation aborted $($update.Title) ResultCode $($installationResult.ResultCode) HResult $($installationResult.HResult)"
+            }
 
-        $updateInstaller.Updates.RemoveAt(0) | Out-Null
-	}
+            $updateInstaller.Updates.RemoveAt(0) | Out-Null
+        }
+        else {
+            Write-Warning "$($count) of $($updateSearcherResult.Updates.Count) - Skipping Update: $($update.Title) because is not downloaded"
+        }
+        
+    }
 }
 
 if (Test-Path $RZGetPath) {
-    Write-Host "Searching for app updates"
+    Write-Host "------------------------------" -ForeGroundColor Cyan
+    Write-Host "Searching for software updates" -ForeGroundColor Cyan
+    Write-Host "------------------------------" -ForeGroundColor Cyan
+    Write-Host "Available software updates"
     Invoke-Process -FilePath $RZGetPath -ArgumentList "update --list --all" -DisplayLevel StdOut
     Write-Host "Running $($RZGetPath) $($RZGetArguments)"
     Invoke-Process -FilePath $RZGetPath -ArgumentList $RZGetArguments -DisplayLevel StdOut
-} else {
+}
+else {
     Write-Host "RZGet.exe not found"
 }
 if (Get-PendingReboot) {
-    Write-Host "A reboot is needed to finish installing updates"
+    Write-Host "A reboot is needed to finish installing updates" -ForegroundColor Yellow
     if ($scheduleReboot) {
         if ($rebootNow) {
-            $rebootTime = (Get-Date).AddSeconds(10)
-        } else {
-            $rebootTime = (Get-Date).AddHours($rebootTime)
+            Write-Host "System will reboot now" -ForegroundColor Yellow
+            Stop-Transcript
+            Invoke-Process -FilePath "$env:SystemRoot\shutdown.exe" -ArgumentList "/r /t 10" -DisplayLevel Full
+            Exit
         }
-        $rebootTime = $rebootTime.toString('HH:mm:ss')
+        $rebootTime = $(Get-Date).AddHours($rebootHours).toString('HH:mm')
         
-        SCHTASKS /delete /tn ScheduledReboot /f
+        SCHTASKS /delete /tn ScheduledReboot /f 2> null
         SCHTASKS /create /sc once /tn "ScheduledReboot" /st "$rebootTime" /tr "shutdown.exe /r /t 0 /f" /RU "NT AUTHORITY\SYSTEM" /RL HIGHEST
         
-        SCHTASKS /delete /tn DeleteScheduledReboot /f
+        SCHTASKS /delete /tn DeleteScheduledReboot /f 2> null
         SCHTASKS /create /sc onstart /tn "DeleteScheduledReboot" /tr "SCHTASKS /delete /tn ScheduledReboot /f" /RU "NT AUTHORITY\SYSTEM" /RL HIGHEST
-        if ($showRebootMessage) {
+        if (-not ([string]::IsNullOrEmpty($rebootMessage))) {
             msg * /SERVER:localhost $rebootMessage
         }
+        Write-Host "System will reboot at $($rebootTime)" -ForegroundColor Yellow
     }
 }
 Stop-Transcript
