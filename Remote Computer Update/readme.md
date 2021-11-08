@@ -2,8 +2,8 @@
 
 <a href="https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Remote%20Computer%20Update/Update-Computer.ps1" download>Right click here and select "Save link as" to download</a>
 
-Installs Windows Updates on local or remote computer. 
-In order to run in remote computer it has to be executed from [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec).
+Runs Windows Update and software update using RuckZuck on local or remote computer. 
+In order to run in remote computer it has to be executed from [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec). See examples below.
 It uses [RZGet](https://github.com/rzander/ruckzuck/releases) to update computer software.
 
 ![Screenshot](https://github.com/juangranados/powershell-scripts/raw/main/Remote%20Computer%20Update/screenshot.png)
