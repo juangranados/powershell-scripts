@@ -6,8 +6,6 @@
 
 .AUTHOR Juan Granados
 
-.AUTHOR Juan Granados
-
 .COPYRIGHT 2021 Juan Granados
 
 .TAGS WSUS Windows Update Remote Software
