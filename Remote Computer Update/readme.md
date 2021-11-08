@@ -68,6 +68,6 @@ psexec.exe -s \\ComputerName powershell.exe -ExecutionPolicy Bypass -file \\ES-C
 ### Run locally
 
 ```powershell
-Update-Computer.ps1 -$logPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\Log" -scheduleReboot -rebootHours 2 -rebootMessage "Se va a reiniciar el equipo dentro de 2 horas para terminar de instalar las actualizaciones de Windows. Por favor, cierra todo antes de esa hora o reinicia el equipo manualmente" -RZGetPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\RZGet.exe" $RZGetArguments 'update "7-Zip" "Google Chrome" "Notepad++" "Notepad++(x64)" "AdobeReader DC" "Putty" "WinSCP" "VLC" "JavaRuntime8" "JavaRuntime8x64" "KeePass" "Webex Meetings" "iTunes" "FileZilla" "Dell Command Update" "Dell Command Update W10"'
+Update-Computer.ps1 -$logPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\Log" -scheduleReboot -rebootHours 2 -rebootMessage "Computer will reboot in two hours. You can reboot now or it will reboot later" -RZGetPath "\\ES-CPD-BCK02\scripts\WindowsUpdate\RZGet.exe" $RZGetArguments 'update "7-Zip" "Google Chrome" "Notepad++(x64)" "AdobeReader DC"'
 ```
 
