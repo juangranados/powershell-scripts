@@ -19,6 +19,9 @@
 .PARAMETER wmi
     Runs Winmgmt /salvagerepository
     Default: false
+.PARAMETER mof
+    Runs mofcomp.exe
+    Default: false
 .PARAMETER defrag
     Defrag drives if required (Fragmentation > 10%)
     Default: false
@@ -69,6 +72,8 @@ Param(
     [Parameter()] 
     [switch]$wmi,
     [Parameter()] 
+    [switch]$mof,
+    [Parameter()] 
     [switch]$defender,
     [Parameter()] 
     [switch]$adaware,
@@ -84,9 +89,9 @@ Param(
     [switch]$defrag,
     [Parameter()] 
     [switch]$update,
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-	[string]$logPath=[Environment]::GetFolderPath("MyDocuments")
+    [string]$logPath = [Environment]::GetFolderPath("MyDocuments")
 )
 #Requires -RunAsAdministrator
 $timestamp = Get-Date -format yyyy-MM-dd-HH-mm
@@ -117,6 +122,13 @@ if ($wmi -or $all) {
     Winmgmt /salvagerepository
 
 }
+if ($mof -or $all) {
+    Write-Host "----------------------------------"
+    Write-Host "Running mofcomp.exe"
+    Write-Host "----------------------------------"
+    Get-ChildItem -Path $env:SystemRoot\System32\wbem\AutoRecover -Filter "*.mof" | ForEach-Object { mofcomp.exe $_.FullName }
+
+}
 if ($defender -or $all -or $antivirus) {
     Write-Host "------------------------------------------------"
     Write-Host "Updating and running Windows Defender Quick Scan"
@@ -126,9 +138,10 @@ if ($defender -or $all -or $antivirus) {
         $startTime = Get-Date
         Update-MpSignature -UpdateSource MicrosoftUpdateServer -ErrorAction Stop
         Start-MpScan -ErrorAction Stop
-        sleep 5
-        Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' | Where-Object {$_.TimeCreated -ge $startTime} | Select-Object -ExpandProperty Message
-    } catch {
+        Start-Sleep 5
+        Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' | Where-Object { $_.TimeCreated -ge $startTime } | Select-Object -ExpandProperty Message
+    }
+    catch {
         Write-Output "An error has ocurred: $($_.Exception.Message)"
     } 
 }
@@ -137,7 +150,7 @@ if ($adaware -or $all -or $antivirus) {
     Write-Host "Downloading, updating and running adaware"
     Write-Host "-----------------------------------------"
     Write-Host "Downloading adawareCommandLineScanner"
-    $(New-Object System.Net.WebClient).DownloadFile("https://www.adaware.com/sites/default/files/av/command-line-scanner/64/AdAwareCommandLineScanner.zip#inline-64bit","$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip")
+    $(New-Object System.Net.WebClient).DownloadFile("https://www.adaware.com/sites/default/files/av/command-line-scanner/64/AdAwareCommandLineScanner.zip#inline-64bit", "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip")
     if (Test-Path "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip") {
         Write-Host "Extracting AdAwareCommandLineScanner.zip"
         Expand-Archive -LiteralPath "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner.zip" "$env:LOCALAPPDATA\Temp\AdAwareCommandLineScanner" -Force
@@ -150,7 +163,8 @@ if ($adaware -or $all -or $antivirus) {
             $xml = [xml](Get-Content "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_quick_scan.xml")
             if ($xml.Summary.InfectedObjects.ChildNodes.Count -eq 0) {
                 Write-Host "No infected items found"
-            } else {
+            }
+            else {
                 Write-Host "$($xml.Summary.InfectedObjects.ChildNodes.Count) infected items found!"
                 $xml.Summary.InfectedObjects.ChildNodes
             }
@@ -159,14 +173,17 @@ if ($adaware -or $all -or $antivirus) {
             $xml = [xml](Get-Content "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_adware_boot_scan.xml")
             if ($myxml.Summary.InfectedObjects.ChildNodes.Count -eq 0) {
                 Write-Host "No infected items found"
-            } else {
+            }
+            else {
                 Write-Host "$($myxml.Summary.InfectedObjects.ChildNodes.Count) infected items found!"
                 $myxml.Summary.InfectedObjects.ChildNodes
             }
-        } else {
+        }
+        else {
             Write-Host "Error extracting adawareCommandLineScanner"
         }
-    } else {
+    }
+    else {
         Write-Host "Error downloading adawareCommandLineScanner"
     }
 }
@@ -175,12 +192,13 @@ if ($kas -or $all -or $antivirus) {
     Write-Host "Downloading and running KVRT"
     Write-Host "----------------------------"
     Write-Host "Downloading KVRT"
-    $(New-Object System.Net.WebClient).DownloadFile("https://devbuilds.s.kaspersky-labs.com/devbuilds/KVRT/latest/full/KVRT.exe","$env:LOCALAPPDATA\Temp\KVRT.exe")
+    $(New-Object System.Net.WebClient).DownloadFile("https://devbuilds.s.kaspersky-labs.com/devbuilds/KVRT/latest/full/KVRT.exe", "$env:LOCALAPPDATA\Temp\KVRT.exe")
     if (Test-Path "$env:LOCALAPPDATA\Temp\KVRT.exe") {
         Write-Host "Running KVRT"
         Start-Process "$env:LOCALAPPDATA\Temp\KVRT.exe" "-accepteula -adinsilent -silent -processlevel 2 -fupdate" -Wait -NoNewWindow -RedirectStandardOutput "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_kvrt_scan.txt"
         Get-Content -Path "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_kvrt_scan.txt"
-    } else {
+    }
+    else {
         Write-Host "Error downloading KVRT"
     }
 }
@@ -189,14 +207,15 @@ if ($mcafee -or $all -or $antivirus) {
     Write-Host "Downloading and running McAfee Stinger"
     Write-Host "--------------------------------------"
     Write-Host "Downloading Stinger"
-    $(New-Object System.Net.WebClient).DownloadFile("https://downloadcenter.mcafee.com/products/mcafee-avert/stinger/stinger64.exe","$env:LOCALAPPDATA\Temp\stinger64.exe")
+    $(New-Object System.Net.WebClient).DownloadFile("https://downloadcenter.mcafee.com/products/mcafee-avert/stinger/stinger64.exe", "$env:LOCALAPPDATA\Temp\stinger64.exe")
     if (Test-Path "$env:LOCALAPPDATA\Temp\stinger64.exe") {
         Write-Host "Running Stinger"
         Start-Process "$env:LOCALAPPDATA\Temp\stinger64.exe" "--silent --rename --reportpath=$($logPath)" -Wait -NoNewWindow
-        $stingerLog = Get-Content $(Get-ChildItem -Path $logPath -Recurse -Filter "Stinger*" | sort $_.LastWriteTime -Descending)[0].FullName
-        $stingerLog = $stingerLog -replace '<[^>]+>',"`n" -replace '&reg;','' -replace '&trade;','' -replace '&copy;',''
+        $stingerLog = Get-Content $(Get-ChildItem -Path $logPath -Recurse -Filter "Stinger*" | Sort-Object $_.LastWriteTime -Descending)[0].FullName
+        $stingerLog = $stingerLog -replace '<[^>]+>', "`n" -replace '&reg;', '' -replace '&trade;', '' -replace '&copy;', ''
         $stingerLog
-    } else {
+    }
+    else {
         Write-Host "Error downloading KVRT"
     }
 }
@@ -213,7 +232,7 @@ if ($clamav -or $all -or $antivirus) {
     Write-Host "------------------------------"
     Write-Host "Downloading and running ClamAV"
     Write-Host "------------------------------"
-    $(New-Object System.Net.WebClient).DownloadFile($clamavDownloadLocation,"$env:LOCALAPPDATA\Temp\clamav.zip")
+    $(New-Object System.Net.WebClient).DownloadFile($clamavDownloadLocation, "$env:LOCALAPPDATA\Temp\clamav.zip")
     if (Test-Path "$env:LOCALAPPDATA\Temp\clamav.zip") {
         Write-Host "Extracting clamav.zip"
         Expand-Archive -LiteralPath "$env:LOCALAPPDATA\Temp\clamav.zip" "$env:LOCALAPPDATA\Temp\clamav" -Force
@@ -225,10 +244,12 @@ if ($clamav -or $all -or $antivirus) {
             Write-Host "Running ClamAV full scan of C:\"
             Start-Process "$env:LOCALAPPDATA\Temp\clamav\clamscan.exe" "C:\ -r --remove=yes --infected --include=\.(exe|cmd|ps1|bat|dll|src|sys|msi|zip|rar|7z|cab|jar)$" -Wait -NoNewWindow -RedirectStandardOutput "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_clamav_scan.txt"
             Get-Content -Path "$($logPath)\$($timestamp)_$($env:COMPUTERNAME)_clamav_scan.txt"
-        } else {
+        }
+        else {
             Write-Host "Error extracting ClamAV"
         }
-    } else {
+    }
+    else {
         Write-Host "Error downloading ClamAV"
     }
 }
@@ -236,10 +257,11 @@ if ($defrag -or $all) {
     Write-Host "----------------------"
     Write-Host "Checking defrag status"
     Write-Host "----------------------"
-    $drives = get-wmiobject win32_volume | ? { $_.DriveType -eq 3 -and $_.DriveLetter}
-    if (-not ($drives)){
+    $drives = get-wmiobject win32_volume | Where-Object { $_.DriveType -eq 3 -and $_.DriveLetter }
+    if (-not ($drives)) {
         Write-Output "No se han encontrado discos con el comando get-wmiobject win32_volume"
-    } else {
+    }
+    else {
         foreach ($drive in $drives) {
             $result = $drive.DefragAnalysis()
             if ($result.ReturnValue -eq 0) {
@@ -248,13 +270,16 @@ if ($defrag -or $all) {
                     $result = $drive.Defrag($true)
                     if ($result.ReturnValue -eq 0) {
                         Write-Host "Defragmentation performed on drive $($drive.DriveLetter). $($result.DefragAnalysis.FreeSpacePercent)% free"
-                    } else {
+                    }
+                    else {
                         Write-Host "An error with code $($result.ReturnValue) has ocurred while defragmenting drive $($drive.DriveLetter)"
                     }
-                } else {
+                }
+                else {
                     Write-Host "Drive $($drive.DriveLetter) does not need defragmentation"
                 }
-            } else {
+            }
+            else {
                 Write-Host "An error with code $($result.ReturnValue) has ocurred while checking status of drive $($drive.DriveLetter)"
             }
         }
@@ -270,7 +295,8 @@ if ($update -or $all) {
         Install-PackageProvider -Name NuGet -Force -Confirm:$false
         Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
         Install-Module -Name PSWindowsUpdate -Force -Confirm:$false
-    } else {
+    }
+    else {
         Write-Host "Updating module PSWindowsUpdate"
         Update-Module PSWindowsUpdate
     }
@@ -278,4 +304,4 @@ if ($update -or $all) {
     Install-WindowsUpdate -MicrosoftUpdate -NotCategory "Drivers" -AcceptAll -IgnoreUserInput -IgnoreReboot
 }
 
-try{Stop-Transcript}catch{}
+try { Stop-Transcript }catch {}
