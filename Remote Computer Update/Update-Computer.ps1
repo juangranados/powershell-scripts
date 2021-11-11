@@ -270,6 +270,9 @@ else {
 
             $updateDownloader.Updates.RemoveAt(0) | Out-Null
         }
+        else {
+            Write-Host "Update already downloaded" -ForegroundColor "Green"
+        }
     }
     $updateInstaller = $updateSession.CreateUpdateInstaller()
     if ($updateInstaller.ForceQuiet -eq $false) { 
