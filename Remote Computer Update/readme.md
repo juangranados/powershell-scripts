@@ -49,6 +49,14 @@ Default: none
 RZGet.exe Arguments.
 Default: update --all
 
+### downloadRZGet
+
+Download RZGet.exe latest version to RZGetPath
+Default: false
+
+RZGet.exe Arguments.
+Default: update --all
+
 ## Examples
 
 ### Run remotely

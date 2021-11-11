@@ -49,6 +49,8 @@
 .PARAMETER RZGetArguments
     RZGet.exe Arguments.
     Default: update --all
+ .PARAMETER downloadRZGet
+    Download RZGet.exe latest version to RZGetPath
 .EXAMPLE
     Run remotely (PsExec needed: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)
     Two options:
@@ -86,7 +88,9 @@ Param(
     [string]$RZGetPath,
     [Parameter(Mandatory = $false)] 
     [ValidateNotNullOrEmpty()]
-    [string]$RZGetArguments = "update --all"
+    [string]$RZGetArguments = "update --all",
+    [Parameter()]
+    [switch]$downloadRZGet
 )
 
 #Requires -RunAsAdministrator
@@ -306,19 +310,34 @@ else {
         
     }
 }
-
-if (Test-Path $RZGetPath) {
-    Write-Host "------------------------------" -ForeGroundColor Cyan
-    Write-Host "Searching for software updates" -ForeGroundColor Cyan
-    Write-Host "------------------------------" -ForeGroundColor Cyan
-    Write-Host "Available software updates"
-    Invoke-Process -FilePath $RZGetPath -ArgumentList "update --list --all" -DisplayLevel StdOut
-    Write-Host "Running $($RZGetPath) $($RZGetArguments)"
-    Invoke-Process -FilePath $RZGetPath -ArgumentList $RZGetArguments -DisplayLevel StdOut
+if ([string]::IsNullOrEmpty($RZGetPath)) {
+    write-Host "RZGetPath variable is empty. Skipping software update"
 }
 else {
-    Write-Host "RZGet.exe not found"
+    if ($downloadRZGet) {
+        try {
+            Invoke-WebRequest "https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe" -OutFile $RZGetPath -ErrorAction Stop
+            Write-Host "Success downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath)"
+        }
+        catch {
+            Write-Host "Error downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath): $($_.Exception.Message)"
+            $_.Exception.Response 
+        }
+    }
+    if (!(Test-Path $RZGetPath)) {
+        Write-Host "RZGet.exe not found. Skipping software update"
+    }
+    else {
+        Write-Host "------------------------------" -ForeGroundColor Cyan
+        Write-Host "Searching for software updates" -ForeGroundColor Cyan
+        Write-Host "------------------------------" -ForeGroundColor Cyan
+        Write-Host "Available software updates"
+        Invoke-Process -FilePath $RZGetPath -ArgumentList "update --list --all" -DisplayLevel StdOut
+        Write-Host "Running $($RZGetPath) $($RZGetArguments)"
+        Invoke-Process -FilePath $RZGetPath -ArgumentList $RZGetArguments -DisplayLevel StdOut
+    }     
 }
+
 if (Get-PendingReboot) {
     Write-Host "A reboot is needed to finish installing updates" -ForegroundColor Yellow
     if ($scheduleReboot) {
