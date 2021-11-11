@@ -11,6 +11,7 @@ Performs several commands to check and repair a Windows Computer, Server or Work
 - **sfc** runs SFC /scannow.
 - **dism** runs DISM /Online /Cleanup-Image /RestoreHealth
 - **wmi** runs Winmgmt /salvagerepository
+- **mof** runs mofcomp.exe from C:\Windows\System32\wbem\AutoRecover
 - **defrag** defrag drives if required (Fragmentation > 10%)
 - **update** install Microsoft updates (except drivers)
 - **defender** runs Windows Defender Update and Quick Scan
