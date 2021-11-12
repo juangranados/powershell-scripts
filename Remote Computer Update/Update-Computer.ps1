@@ -44,7 +44,9 @@
     Default: none
 .PARAMETER RZGetPath
     RZGet.exe path.
-    If path not found RZGet will not be called.
+    Example: \\SRV-FS05\RZGet\rzget.exe
+    If path not found RZGet will not be called unless 
+    you set -downloadRZGet switch and it will be downloaded to this path.
     Default: none
 .PARAMETER RZGetArguments
     RZGet.exe Arguments.
