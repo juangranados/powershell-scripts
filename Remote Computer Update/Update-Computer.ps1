@@ -316,7 +316,12 @@ else {
     }
 }
 if ([string]::IsNullOrEmpty($RZGetPath)) {
-    write-Host "RZGetPath variable is empty. Skipping software update"
+    if ($downloadRZGet) {
+        Write-Host "You have to set RZGetPath in order to download RZGet.exe" -ForegroundColor Yellow
+    }
+    else {
+        write-Host "RZGetPath variable is empty. Skipping software update"
+    }
 }
 else {
     if ($downloadRZGet) {
