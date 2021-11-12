@@ -20,9 +20,9 @@
 
 <#
 .SYNOPSIS
-    Installs Windows Updates on local or remote computer.
+    Installs Windows and software updates on local or remote computer.
 .DESCRIPTION
-    Installs Windows Updates on local or remote computer.
+    Installs Windows and software updates on local or remote computer.
     In order to run in remote computer, it has to be run from psexec: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
     See examples below.
     It uses RZGet.exe to update computer software: https://github.com/rzander/ruckzuck/releases
