@@ -230,9 +230,9 @@ if (Get-PendingReboot) {
 
 $updateSearcher = New-Object -ComObject Microsoft.Update.Searcher
 $updateSession = New-Object -ComObject Microsoft.Update.Session
-Write-Host "------------------------------------" -ForeGroundColor Cyan
-Write-Host "Searching applicable Windows updates" -ForeGroundColor Cyan
-Write-Host "------------------------------------" -ForeGroundColor Cyan
+Write-Host "----------------------------------------" -ForeGroundColor Cyan
+Write-Host "Searching for applicable Windows updates" -ForeGroundColor Cyan
+Write-Host "----------------------------------------" -ForeGroundColor Cyan
 $updateSearcherResult = $updateSearcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
 if ($updateSearcherResult.Updates.Count -eq 0) {
     Write-Host "There are no applicable updates for this computer."
