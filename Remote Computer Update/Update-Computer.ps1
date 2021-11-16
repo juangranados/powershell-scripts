@@ -325,16 +325,21 @@ if ([string]::IsNullOrEmpty($RZGetPath)) {
 }
 else {
     if ($downloadRZGet) {
-        try {
-            Invoke-WebRequest "https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe" -OutFile $RZGetPath -ErrorAction Stop
-            Write-Host "Success downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath)"
+        if ($($RZGetPath.Substring($RZGetPath.Length - 4)) -ne ".exe") {
+            Write-Host "RZGetPath is invalid"
         }
-        catch {
-            Write-Host "Error downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath): $($_.Exception.Message)"
-            $_.Exception.Response 
+        else {
+            try {
+                Invoke-WebRequest "https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe" -OutFile $RZGetPath -ErrorAction Stop
+                Write-Host "Success downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath)"
+            }
+            catch {
+                Write-Host "Error downloading https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe to $($RZGetPath): $($_.Exception.Message)"
+                $_.Exception.Response 
+            }
         }
     }
-    if (!(Test-Path $RZGetPath)) {
+    if (!(Test-Path $RZGetPath) -or ($($RZGetPath.Substring($RZGetPath.Length - 4)) -ne ".exe")) {
         Write-Host "RZGet.exe not found. Skipping software update"
     }
     else {
