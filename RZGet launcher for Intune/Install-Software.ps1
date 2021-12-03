@@ -2,7 +2,7 @@
 # Arguments
 ## ------------------------------------------------------------------
 [string]$folder = 'C:\temp\InstallSoftware' #Folder to download RZGet.exe and save log.
-[string]$RZGetArguments = 'install 7-Zip Notepad++(x64) Edge' # RZget Arguments. Check https://github.com/rzander/ruckzuck/wiki/RZGet and https://ruckzuck.tools/Home/Repository
+[string]$RZGetArguments = 'install 7-Zip Notepad++(x64) Edge "3CXPhone for Windows" "Google Chrome"' # RZget Arguments. Check https://github.com/rzander/ruckzuck/wiki/RZGet and https://ruckzuck.tools/Home/Repository
 # Mail Settings. If you do not want to send and email, leave empty $SMTPServer variable: $SMTPServer = ''
 [string]$SMTPServer = 'smtp.office365.com'
 [string[]]$recipient = 'juangranados@contoso.com', 'support@contoso.com'
