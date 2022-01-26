@@ -36,7 +36,9 @@
     Deletes Windows Search Database and modify registry to rebuild it at next Search Service startup.
     Default false. 
 .EXAMPLE
-    Defrag-WinSearchDB -LogPath "\\ES-CPD-BCK02\Log"
+    Defrag-WinSearchDB -LogPath "\\ES-CPD-BCK02\Log" -TempPath \\ES-CPD-BCK02\Temp
+.EXAMPLE
+    Defrag-WinSearchDB -TempPath "D:\Temp"
 .LINK
     https://github.com/juangranados/powershell-scripts/tree/main/Defrag%20Windows%20Search%20Database
 .NOTES

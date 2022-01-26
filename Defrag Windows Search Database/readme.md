@@ -33,3 +33,12 @@ Example: "\\ES-CPD-BCK02\SearchDefrag\Log"
 Deletes Windows Search Database and modify registry to rebuild it at next Search Service startup.
 
 Default: false
+
+## Example
+```powershell
+Defrag-WinSearchDB -LogPath "\\ES-CPD-BCK02\DefragWindDB\Log" -TempPath "\\ES-CPD-BCK02\DefragWindDB\Temp"
+```
+
+```powershell
+Defrag-WinSearchDB -TempPath "D:\Temp"
+```
