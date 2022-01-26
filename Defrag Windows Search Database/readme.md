@@ -11,20 +11,25 @@ Script to Defrag Windows Search Database and optionally deletes it after error.
 ### DataBase
 
 Windows Search Database path.
+
 Default C:\ProgramData\Microsoft\Search\Data\Applications\Windows\Windows.edb
 
 ### TempPath
 
 Temporary folder to perform defrag. Using a different physical drive is recommended.
+
 Default: C:\ProgramData\Microsoft\Search\Data\Applications\Windows
 
 ### LogPath
 
 Log file path.
-Default Documents
+
+Default: Documents.
+
 Example: "\\ES-CPD-BCK02\SearchDefrag\Log"
 
 ### DeleteOnError
 
 Deletes Windows Search Database and modify registry to rebuild it at next Search Service startup.
+
 Default: false
