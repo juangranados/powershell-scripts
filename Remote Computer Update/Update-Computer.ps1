@@ -212,6 +212,9 @@ function Invoke-Process {
 # Script start
 ## ------------------------------------------------------------------
 
+if ($logPath.Chars($logPath.Length - 1) -eq '\') {
+    $logPath = ($logPath.TrimEnd('\'))
+}
 if (-not (Test-Path $logPath)) {
     $logPath = [Environment]::GetFolderPath("MyDocuments")  
 } 
