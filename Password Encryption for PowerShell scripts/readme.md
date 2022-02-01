@@ -4,8 +4,9 @@
 
 This two scripts generate a encrypted password and allow use it in PowerShell scripts.
 
-New-StringEncryption.ps1: generate a an encrypted string that can only be decrypted on the same machine that performed the original encryption.
-New-StringDecryption.ps1: takes a Base64 encoded string and will output the clear text version of it.
+**New-StringEncryption.ps1**: generate a an encrypted string that can only be decrypted on the same machine that performed the original encryption.
+
+**New-StringDecryption.ps1**: takes a Base64 encoded string and will output the clear text version of it.
 
 ## Examples
 
