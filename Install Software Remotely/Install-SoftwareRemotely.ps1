@@ -493,7 +493,7 @@ Do {
             try {
                 $installedApps = CheckSoftwareInstalled $Computer
                 If ($installedApps) {
-                    if ($AppVersion) {
+                    if ($AppVersion -ne 'all') {
                         $skipInstallation = $false
                         foreach ($installedApp in $installedApps) {
                             try {
