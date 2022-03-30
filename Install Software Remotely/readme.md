@@ -4,6 +4,10 @@
 
 This script install software remotely in a group of computers and retry the installation in case of error. It uses PowerShell to perform remote installation.
 
+*Screenshot of Edge remote installation on 20 RDS Servers.*
+
+![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/Screenshot2.png)
+
 *Screenshot of TightVNC remote installation on 77 computers.*
 
 ![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Remotely/Screenshot.png)
@@ -101,6 +105,10 @@ Thanks Terence Luk for his amazing post:
 [http://terenceluk.blogspot.com/2019/02/using-installsoftwareremotelyps1-to.html](https://web.archive.org/web/20200318211458/http://terenceluk.blogspot.com/2019/02/using-installsoftwareremotelyps1-to.html)
 
 Other examples:
+```powershell
+# Edge remote installation on all servers in OU
+Install-SoftwareRemotely.ps1 -AppPath "\\HSRV-FS02\Scripts\InstallSoftware\MicrosoftEdgeEnterpriseX64.msi" -AppArgs '/qn' -OU "OU=RDS,OU=Datacenter,DC=CONTOSO,DC=COM" -LogPath '\\HSRV-FS02\Scripts\InstallSoftware\Logs'
+```
 
 ```powershell
 #Install TightVNC mirage Driver using computer list with different credentials checking before if it is installed and computers have 32 bits, enabling PSRemoting on connection error. 
@@ -113,8 +121,9 @@ Install-SoftwareRemotely.ps1 `
 -AppVersion '2.0' ` 
 -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="32"' ` 
 -EnablePSRemoting ` 
--Credential 
- 
+-Credential
+```
+ ```powershell
 #Install TightVNC on 64 bits computers in a OU checking before if it is installed and enablig PSRemoting on connection error. 
 Install-SoftwareRemotely.ps1 ` 
 -AppPath 'C:\Scripts\TightVNC\tightvnc-2.8.8-gpl-setup-64bit.msi' ` 
@@ -125,7 +134,8 @@ Install-SoftwareRemotely.ps1 `
 -AppVersion '2.8.8.0' ` 
 -WMIQuery 'select * from Win32_Processor where DeviceID="CPU0" and AddressWidth="64"' ` 
 -EnablePSRemoting 
- 
+```
+ ```powershell
 #Upgrade VMware Tools in datacenter OU 
 Install-SoftwareRemotely.ps1 -AppPath "\\mv-srv-fs01\Software\VMware Tools\setup64.exe" -AppArgs '/s /v "/qn reboot=r"' -OU "OU=Datacenter,DC=CONTOSO,DC=COM" 
 ```
