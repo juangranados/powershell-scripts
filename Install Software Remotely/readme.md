@@ -78,7 +78,8 @@ You can check app name on a computer with it installed looking at:
 
 ​	*Default: None*
 
-**AppVersion:** App name as shown in registry to check if app is installed on remote computer and not reinstall it. If not specified and AppName has a value, version will be ignored.
+**AppVersion:** App version as shown in registry. If not specified and AppName has a value, version will be ignored.
+If computer app version is lower than AppVersion variable, software will be installed and if it is equal or greater, software installation will be skipped. 
 
 You can check app version on a computer with it installed looking at:
 
