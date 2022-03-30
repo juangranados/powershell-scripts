@@ -493,29 +493,36 @@ Do {
             try {
                 $installedApps = CheckSoftwareInstalled $Computer
                 If ($installedApps) {
-                    $skipInstallation = $false
-                    foreach ($installedApp in $installedApps) {
-                        try {
-                            if ([System.Version]$installedApps.DisplayVersion -gt [System.Version]$AppVersion) {
-                                Set-Message "Greater version found on computer. Skipping installation." -ForegroundColor Green
-                                $ComputerSkipped.Add($Computer) | Out-Null
-                                $skipInstallation = $true
+                    if ($AppVersion) {
+                        $skipInstallation = $false
+                        foreach ($installedApp in $installedApps) {
+                            try {
+                                if ([System.Version]$installedApps.DisplayVersion -gt [System.Version]$AppVersion) {
+                                    Set-Message "Greater version found on computer. Skipping installation." -ForegroundColor Green
+                                    $ComputerSkipped.Add($Computer) | Out-Null
+                                    $skipInstallation = $true
+                                }
+                                elseif ([System.Version]$installedApps.DisplayVersion -eq [System.Version]$AppVersion) {
+                                    Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
+                                    $ComputerSkipped.Add($Computer) | Out-Null
+                                    $skipInstallation = $true
+                                }
+                                elseif ([System.Version]$installedApps.DisplayVersion -lt [System.Version]$AppVersion) {
+                                    Set-Message "Lower version found on computer." -ForegroundColor Green
+                                }
                             }
-                            elseif ([System.Version]$installedApps.DisplayVersion -eq [System.Version]$AppVersion) {
-                                Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
-                                $ComputerSkipped.Add($Computer) | Out-Null
+                            catch {
+                                Set-Message "Error checking software version: $($_.Exception.Message)" -ForegroundColor Red
                                 $skipInstallation = $true
-                            }
-                            elseif ([System.Version]$installedApps.DisplayVersion -lt [System.Version]$AppVersion) {
-                                Set-Message "Lower version found on computer." -ForegroundColor Green
                             }
                         }
-                        catch {
-                            Set-Message "Error checking software version: $($_.Exception.Message)" -ForegroundColor Red
-                            $skipInstallation = $true
+                        if ($skipInstallation) {
+                            continue
                         }
                     }
-                    if ($skipInstallation) {
+                    else {
+                        Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
+                        $ComputerSkipped.Add($Computer) | Out-Null
                         continue
                     }
                 }
