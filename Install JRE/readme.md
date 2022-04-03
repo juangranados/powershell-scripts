@@ -14,7 +14,7 @@ You can skip uninstallation of old versions with -NoUninstall switch.
 
 ### Download and update daily
 
-To download and keep Java Runtime Environment Updated
+To download and keep Java Runtime Environment updated
 
 Create a scheduled task on server that nightly executes 'Download-JRE.ps1' to your server path.
 
