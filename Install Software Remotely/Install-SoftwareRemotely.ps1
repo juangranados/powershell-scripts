@@ -1,6 +1,6 @@
 ﻿<#PSScriptInfo
 
-.VERSION 1.0.1
+.VERSION 1.1
 
 .GUID 9d73a2b5-1329-42c0-b0ec-328198e3392d
 
@@ -102,47 +102,47 @@
 #>
 
 Param(
-		[Parameter(Mandatory=$true,Position=0)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$AppPath,
-		[Parameter(Mandatory=$false,Position=1)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$AppArgs="None",
-		[Parameter(Mandatory=$false,Position=2)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$LocalPath="C:\temp",
-        [Parameter(Mandatory=$false,Position=3)] 
-		[ValidateNotNullOrEmpty()]
-		[int]$Retries=5,
-        [Parameter(Mandatory=$false,Position=4)] 
-		[ValidateNotNullOrEmpty()]
-		[int]$TimeBetweenRetries=60,
-        [Parameter(Mandatory=$false,Position=5)] 
-		[ValidateNotNullOrEmpty()]
-		[string[]]$ComputerList,
-        [Parameter(Mandatory=$false,Position=6)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$OU,
-        [Parameter(Mandatory=$false,Position=7)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$CSV,
-        [Parameter(Mandatory=$false,Position=7)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$LogPath=[Environment]::GetFolderPath("MyDocuments"),
-        [Parameter(Position=9)] 
-		[switch]$EnablePSRemoting,
-        [Parameter(Position=10)] 
-		[switch]$Credential,
-        [Parameter(Mandatory=$false,Position=11)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$AppName="None",
-        [Parameter(Mandatory=$false,Position=12)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$AppVersion="all",
-        [Parameter(Mandatory=$false,Position=13)] 
-		[ValidateNotNullOrEmpty()]
-		[string]$WMIQuery="None"
-	)
+    [Parameter(Mandatory = $true, Position = 0)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$AppPath,
+    [Parameter(Mandatory = $false, Position = 1)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$AppArgs = "None",
+    [Parameter(Mandatory = $false, Position = 2)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$LocalPath = "C:\temp",
+    [Parameter(Mandatory = $false, Position = 3)] 
+    [ValidateNotNullOrEmpty()]
+    [int]$Retries = 5,
+    [Parameter(Mandatory = $false, Position = 4)] 
+    [ValidateNotNullOrEmpty()]
+    [int]$TimeBetweenRetries = 60,
+    [Parameter(Mandatory = $false, Position = 5)] 
+    [ValidateNotNullOrEmpty()]
+    [string[]]$ComputerList,
+    [Parameter(Mandatory = $false, Position = 6)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$OU,
+    [Parameter(Mandatory = $false, Position = 7)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$CSV,
+    [Parameter(Mandatory = $false, Position = 7)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$LogPath = [Environment]::GetFolderPath("MyDocuments"),
+    [Parameter(Position = 9)] 
+    [switch]$EnablePSRemoting,
+    [Parameter(Position = 10)] 
+    [switch]$Credential,
+    [Parameter(Mandatory = $false, Position = 11)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$AppName = "None",
+    [Parameter(Mandatory = $false, Position = 12)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$AppVersion = "all",
+    [Parameter(Mandatory = $false, Position = 13)] 
+    [ValidateNotNullOrEmpty()]
+    [string]$WMIQuery = "None"
+)
 
 #Requires -RunAsAdministrator
 
@@ -150,38 +150,37 @@ Param(
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-function Unzip
-{
+function Unzip {
     param([string]$zipfile, [string]$outpath)
     
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
-Function Copy-WithProgress
-{
-    Param([string]$Source,[string]$Destination)
+Function Copy-WithProgress {
+    Param([string]$Source, [string]$Destination)
 
-    $Source=$Source.tolower()
-    $Filelist=Get-Childitem $Source –Recurse
-    $Total=$Filelist.count
-    $Position=0
-    If(!(Test-Path $Destination)){
+    $Source = $Source.tolower()
+    $Filelist = Get-Childitem $Source –Recurse
+    $Total = $Filelist.count
+    $Position = 0
+    If (!(Test-Path $Destination)) {
         New-Item $Destination -Type Directory | Out-Null
     }
-    foreach ($File in $Filelist){
-        $Filename=$File.Fullname.tolower().replace($Source,'')
-        $DestinationFile=($Destination+$Filename)
-        try{
-            Copy-Item $File.FullName -Destination $DestinationFile -Force
-        }catch{throw $_.Exception}
+    foreach ($File in $Filelist) {
+        $Filename = $File.Fullname.tolower().replace($Source, '')
+        $DestinationFile = ($Destination + $Filename)
+        try {
+            Copy-Item $File.FullName -Destination $DestinationFile -Force
+        }
+        catch { throw $_.Exception }
         $Position++
-        Write-Progress -Activity "Copying data from $source to $Destination" -Status "Copying File $Filename" -PercentComplete (($Position/$Total)*100)
-    }
+        Write-Progress -Activity "Copying data from $source to $Destination" -Status "Copying File $Filename" -PercentComplete (($Position / $Total) * 100)
+    }
 }
 
-Function Set-Message([string]$Text,[string]$ForegroundColor="White",[int]$Append=$True){
+Function Set-Message([string]$Text, [string]$ForegroundColor = "White", [int]$Append = $True) {
 
-    if ($Append){
+    if ($Append) {
         $Text | Out-File $LogPath -Append
     }
     else {
@@ -190,8 +189,7 @@ Function Set-Message([string]$Text,[string]$ForegroundColor="White",[int]$Append
     Write-Host $Text -ForegroundColor $ForegroundColor
 }
 
-function Get-InstalledApps
-{
+function Get-InstalledApps {
     if ([IntPtr]::Size -eq 4) {
         $regpath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
     }
@@ -201,20 +199,19 @@ function Get-InstalledApps
             'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
         )
     }
-    Get-ItemProperty $regpath | .{process{if($_.DisplayName -and $_.UninstallString) { $_ } }} | 
-        Select DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
-        Sort DisplayName
+    Get-ItemProperty $regpath | . { process { if ($_.DisplayName -and $_.UninstallString) { $_ } } } | 
+    Select-Object DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
+    Sort-Object DisplayName
     #$result = Get-InstalledApps | where {$_.DisplayName -like $appToMatch}
 
 }
 
 
-Function CheckSoftwareInstalled([string]$Computer){
-    If ($Cred){
-        try{
+Function CheckSoftwareInstalled([string]$Computer) {
+    If ($Cred) {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock { 
-                $AppName = $args[0]
-                $AppVersion = $args[1]              
+                $AppName = $args[0]           
                 if ([IntPtr]::Size -eq 4) {
                     $regpath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
                 }
@@ -224,23 +221,18 @@ Function CheckSoftwareInstalled([string]$Computer){
                         'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
                     )
                 }
-                $InstalledApps = Get-ItemProperty $regpath | .{process{if($_.DisplayName -and $_.UninstallString) { $_ } }} | 
-                    Select DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
-                    Sort DisplayName
-                If ($AppVersion -ne "all"){
-                    Return $InstalledApps | where {$_.DisplayName -eq $AppName -and $_.DisplayVersion -eq  $AppVersion}
-                }
-                Else{
-                    Return $InstalledApps | where {$_.DisplayName -eq $AppName}
-                }
-            } -ArgumentList $AppName, $AppVersion -Credential $Cred
-        }catch{throw $_.Exception}
+                $InstalledApps = Get-ItemProperty $regpath | . { process { if ($_.DisplayName -and $_.UninstallString) { $_ } } } | 
+                Select-Object DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
+                Sort-Object DisplayName
+                Return $InstalledApps | Where-Object { $_.DisplayName -eq $AppName }
+            } -ArgumentList $AppName -Credential $Cred
+        }
+        catch { throw $_.Exception }
     }
-    else{
-        try{
+    else {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock {
-                $AppName = $args[0]
-                $AppVersion = $args[1]              
+                $AppName = $args[0]          
                 if ([IntPtr]::Size -eq 4) {
                     $regpath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
                 }
@@ -250,66 +242,64 @@ Function CheckSoftwareInstalled([string]$Computer){
                         'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
                     )
                 }
-                $InstalledApps = Get-ItemProperty $regpath | .{process{if($_.DisplayName -and $_.UninstallString) { $_ } }} | 
-                    Select DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
-                    Sort DisplayName
-                If ($AppVersion -ne "all"){
-                    Return $InstalledApps | where {$_.DisplayName -eq $AppName -and $_.DisplayVersion -eq  $AppVersion}
-                }
-                Else{
-                    Return $InstalledApps | where {$_.DisplayName -eq $AppName}
-                }
-            } -ArgumentList $AppName, $AppVersion
-        }catch{throw $_.Exception}
+                $InstalledApps = Get-ItemProperty $regpath | . { process { if ($_.DisplayName -and $_.UninstallString) { $_ } } } | 
+                Select-Object DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
+                Sort-Object DisplayName
+                Return $InstalledApps | Where-Object { $_.DisplayName -eq $AppName }
+            } -ArgumentList $AppName
+        }
+        catch { throw $_.Exception }
     }
 }
 
-Function CheckWMIQuery([string]$Computer){
-    If ($Cred){
-        try{
+Function CheckWMIQuery([string]$Computer) {
+    If ($Cred) {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock { 
                 $WMIQuery = $args[0]
                 Write-Host "Executing $($WMIQuery)"
-                Return gwmi -Query $WMIQuery
+                Return Get-WmiObject -Query $WMIQuery
             } -ArgumentList $WMIQuery -Credential $Cred
-        }catch{throw $_.Exception}
+        }
+        catch { throw $_.Exception }
     }
-    else{
-        try{
+    else {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock { 
                 $WMIQuery = $args[0]
                 Write-Host "Executing $($WMIQuery)"
-                Return gwmi -Query $WMIQuery
+                Return Get-WmiObject -Query $WMIQuery
             } -ArgumentList $WMIQuery
-        }catch{throw $_.Exception}   
+        }
+        catch { throw $_.Exception }   
     }
 }
 
-Function InstallRemoteSoftware([string]$Computer){
-    If ($Cred){
-        try{
+Function InstallRemoteSoftware([string]$Computer) {
+    If ($Cred) {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock {
                 $Application = $args[0]
                 $AppArgs = $args[1]
-                $ApplicationName = $Application.Substring($Application.LastIndexOf('\')+1)
-                $ApplicationFolderPath = $Application.Substring(0,$Application.LastIndexOf('\'))
-                $ApplicationExt = $Application.Substring($Application.LastIndexOf('.')+1)
+                $ApplicationName = $Application.Substring($Application.LastIndexOf('\') + 1)
+                $ApplicationFolderPath = $Application.Substring(0, $Application.LastIndexOf('\'))
+                $ApplicationExt = $Application.Substring($Application.LastIndexOf('.') + 1)
                 Write-Host "Installing $($ApplicationName) on $($env:COMPUTERNAME)"
-                If($ApplicationExt -eq "msi"){
-                    If ($AppArgs -ne "None"){
-                         Write-Host "Installing as MSI: msiexec /i $($Application) $($AppArgs)"
+                If ($ApplicationExt -eq "msi") {
+                    If ($AppArgs -ne "None") {
+                        Write-Host "Installing as MSI: msiexec /i $($Application) $($AppArgs)"
                         $p = Start-Process "msiexec" -ArgumentList "/i $($Application) $($AppArgs)" -Wait -Passthru
                     }
-                    else{
+                    else {
                         Write-Host "Installing as MSI: msiexec /i $($Application)"
                         $p = Start-Process "msiexec" -ArgumentList "/i $($Application) /quiet /norestart" -Wait -Passthru
                     }
                 }
-                ElseIf ($AppArgs -ne "None"){
+                ElseIf ($AppArgs -ne "None") {
                     Write-Host "Executing $Application $AppArgs"
                     $p = Start-Process $Application -ArgumentList $AppArgs -Wait -Passthru
                 }
-                Else{
+                Else {
                     Write-Host "Executing $Application"
                     $p = Start-Process $Application -Wait -Passthru
                 }
@@ -318,39 +308,45 @@ Function InstallRemoteSoftware([string]$Computer){
                     Write-Host "Failed installing with error code $($p.ExitCode)" -ForegroundColor Red
                     $Return = $($env:COMPUTERNAME)
                 }
-                else{
+                else {
                     $Return = 0
                 }
                 Write-Host "Deleting $($ApplicationFolderPath)"
-                Remove-Item $($ApplicationFolderPath) -Force -Recurse
+                try {
+                    Remove-Item $($ApplicationFolderPath) -Force -Recurse
+                }
+                catch {
+                    Set-Message "Error on remote deletion: $($_.Exception.Message)" -ForegroundColor Red
+                }
                 Return $Return
             } -ArgumentList "$($LocalPath)\$($ApplicationFolderName)\$($ApplicationName)", $AppArgs -Credential $Cred
-        }catch{throw $_.Exception}
+        }
+        catch { throw $_.Exception }
     }
-    else{
-        try{
+    else {
+        try {
             Return Invoke-Command -computername $Computer -ScriptBlock {
                 $Application = $args[0]
                 $AppArgs = $args[1]
-                $ApplicationName = $Application.Substring($Application.LastIndexOf('\')+1)
-                $ApplicationFolderPath = $Application.Substring(0,$Application.LastIndexOf('\'))
-                $ApplicationExt = $Application.Substring($Application.LastIndexOf('.')+1)
+                $ApplicationName = $Application.Substring($Application.LastIndexOf('\') + 1)
+                $ApplicationFolderPath = $Application.Substring(0, $Application.LastIndexOf('\'))
+                $ApplicationExt = $Application.Substring($Application.LastIndexOf('.') + 1)
                 Write-Host "Installing $($ApplicationName) on $($env:COMPUTERNAME)"
-                If($ApplicationExt -eq "msi"){
-                    If ($AppArgs -ne "None"){
-                         Write-Host "Installing as MSI: msiexec /i $($Application) $($AppArgs)"
+                If ($ApplicationExt -eq "msi") {
+                    If ($AppArgs -ne "None") {
+                        Write-Host "Installing as MSI: msiexec /i $($Application) $($AppArgs)"
                         $p = Start-Process "msiexec" -ArgumentList "/i $($Application) $($AppArgs)" -Wait -Passthru
                     }
-                    else{
+                    else {
                         Write-Host "Installing as MSI: msiexec /i $($Application)"
                         $p = Start-Process "msiexec" -ArgumentList "/i $($Application) /quiet /norestart" -Wait -Passthru
                     }
                 }
-                ElseIf ($AppArgs -ne "None"){
+                ElseIf ($AppArgs -ne "None") {
                     Write-Host "Executing $Application $AppArgs"
                     $p = Start-Process $Application -ArgumentList $AppArgs -Wait -Passthru
                 }
-                Else{
+                Else {
                     Write-Host "Executing $Application"
                     $p = Start-Process $Application -Wait -Passthru
                 }
@@ -359,27 +355,34 @@ Function InstallRemoteSoftware([string]$Computer){
                     Write-Host "Failed installing with error code $($p.ExitCode)" -ForegroundColor Red
                     $Return = $($env:COMPUTERNAME)
                 }
-                else{
+                else {
                     $Return = 0
                 }
                 Write-Host "Deleting $($ApplicationFolderPath)"
-                Remove-Item $($ApplicationFolderPath) -Force -Recurse
+                try {
+                    Remove-Item $($ApplicationFolderPath) -Force -Recurse
+                }
+                catch {
+                    Set-Message "Error on remote deletion: $($_.Exception.Message)" -ForegroundColor Red
+                }
                 Return $Return
             } -ArgumentList "$($LocalPath)\$($ApplicationFolderName)\$($ApplicationName)", $AppArgs
-        }catch{throw $_.Exception}
+        }
+        catch { throw $_.Exception }
     }
 }
 
-Function CheckPSRemoting([string]$Computer){
-    If ($EnablePSRemoting){
+Function CheckPSRemoting([string]$Computer) {
+    If ($EnablePSRemoting) {
         Set-Message "Enabling PSRemoting on computer: psexec.exe /accepteula -h -d \\$($Computer) -s powershell Enable-PSRemoting"
-        try{
+        try {
             psexec.exe /accepteula -h -d "\\$($Computer)" -s powershell Enable-PSRemoting -Force 2>&1 | Out-Null
-        }catch{
+        }
+        catch {
             Set-Message "PSExec running on background. Continue with next computer."
         }
     }
-    Else{
+    Else {
         Set-Message "You can try to enable PowerShell Remoting on computer using parameter -EnablePSRemoting" -ForegroundColor DarkYellow
     }
 }
@@ -393,126 +396,160 @@ Set-Message "Start remote installation on $(get-date -Format "yyyy-mm-dd hh:mm:s
 
 #Initial validations.
 
-If (!(Test-Path $AppPath)){
+If (!(Test-Path $AppPath)) {
     Set-Message "Error accessing $($AppPath). The script can not continue"
     Exit 1
 }
-If ($EnablePSRemoting){
-    if (!(Get-Command "psexec.exe" -ErrorAction SilentlyContinue)){ 
+If ($EnablePSRemoting) {
+    if (!(Get-Command "psexec.exe" -ErrorAction SilentlyContinue)) { 
         Set-Message "Error. Microsoft Psexec not found on system. Download it from https://download.sysinternals.com/files/PSTools.zip and extract all in C:\Windows\System32" -ForegroundColor Yellow
-        $Answer=Read-Host "Do you want to download and install PSTools (y/n)?"
-        if (($Answer -eq "y") -or ($Answer -eq "Y")){
+        $Answer = Read-Host "Do you want to download and install PSTools (y/n)?"
+        if (($Answer -eq "y") -or ($Answer -eq "Y")) {
             Set-Message "Downloading PSTools"
-            If (Test-Path "$($env:temp)\PSTools.zip"){
-                Remove-Item "$($env:temp)\PSTools.zip" -Force
+            If (Test-Path "$($env:temp)\PSTools.zip") {
+                Remove-Item "$($env:temp)\PSTools.zip" -Force -ErrorAction Continue
             }
             (New-Object System.Net.WebClient).DownloadFile("https://download.sysinternals.com/files/PSTools.zip", "$($env:temp)\PSTools.zip")
-            if (Test-Path "$($env:temp)\PSTools.zip"){
+            if (Test-Path "$($env:temp)\PSTools.zip") {
                 Set-Message "Unzipping PSTools"
-                If (Test-Path "$($env:temp)\PSTools"){
-                    Remove-Item "$($env:temp)\PSTools" -Force -Recurse
+                If (Test-Path "$($env:temp)\PSTools") {
+                    Remove-Item "$($env:temp)\PSTools" -Force -Recurse -ErrorAction Continue
                 }
                 Unzip "$($env:temp)\PSTools.zip" "$($env:temp)\PSTools" 
                 Copy-Item "$($env:temp)\PSTools\*.exe" "$($env:SystemRoot)\System32" -Force
-                if (Test-Path "$($env:SystemRoot)\System32\psexec.exe"){
+                if (Test-Path "$($env:SystemRoot)\System32\psexec.exe") {
                     Set-Message "PSTools installed" -ForegroundColor Green 
                 }
-                else{
+                else {
                     Set-Message "Error unzipping PSTools" -ForegroundColor Red
-                    Remove-Item "$($env:temp)\PSTools.zip" -Force
+                    Remove-Item "$($env:temp)\PSTools.zip" -Force -ErrorAction Continue
                     Exit 1
                 }
             }
-            else{
+            else {
                 Set-Message "Error downloading PSTools" -ForegroundColor Red
                 Exit 1
             }
         }
-        else{
+        else {
             Exit 1
         }
     }
 }
-If ($OU){
-    if (!(Get-Command "Get-ADComputer" -ErrorAction SilentlyContinue)){ 
+If ($OU) {
+    if (!(Get-Command "Get-ADComputer" -ErrorAction SilentlyContinue)) { 
         Set-Message "Error. Get-ADComputer not found on system. You have to install the PowerShell Active Directory module order to query Active Directory. https://4sysops.com/archives/how-to-install-the-powershell-active-directory-module/" -ForegroundColor Red
         Exit 1
     }
-    try{
-        $ComputerList = Get-ADComputer -Filter * -SearchBase "$OU" | Select-Object -Expand name
-    }catch{
+    try {
+        $ComputerList = Get-ADComputer -Filter * -SearchBase "$OU" | Select-Object -Expand name | Sort-Object
+    }
+    catch {
         Set-Message "Error querying AD: $($_.Exception.Message)" -ForegroundColor Red
         Exit 1
     }
 }
-ElseIf ($CSV){
-    try{
-        $ComputerList = Get-Content $CSV | where {$_ -notmatch 'Name'} | Foreach-Object {$_ -replace '"', ''}
-    }catch{
+ElseIf ($CSV) {
+    try {
+        $ComputerList = Get-Content $CSV | Where-Object { $_ -notmatch 'Name' } | Foreach-Object { $_ -replace '"', '' }
+    }
+    catch {
         Set-Message "Error getting CSV content: $($_.Exception.Message)" -ForegroundColor Red
         Exit 1
     }
 }
-ElseIf(!$ComputerList){
+ElseIf (!$ComputerList) {
     Set-Message "You have to set a list of computers, OU or CSV." -ForegroundColor Red
     Exit 1
 }
-If ($Credential){
+If ($Credential) {
     $Cred = Get-Credential
 }
-If(!$Cred -or !$Credential){
+If (!$Cred -or !$Credential) {
     Set-Message "No credential specified. Using logon account"
 }
-Else{
+Else {
     Set-Message "Using user $($Cred.UserName)"
 }
 
-$ApplicationName = $AppPath.Substring($AppPath.LastIndexOf('\')+1)
-$ApplicationFolderPath = $AppPath.Substring(0,$AppPath.LastIndexOf('\'))
-$ApplicationFolderName = $ApplicationFolderPath.Substring($ApplicationFolderPath.LastIndexOf('\')+1)
+$ApplicationName = $AppPath.Substring($AppPath.LastIndexOf('\') + 1)
+$ApplicationFolderPath = $AppPath.Substring(0, $AppPath.LastIndexOf('\'))
+$ApplicationFolderName = $ApplicationFolderPath.Substring($ApplicationFolderPath.LastIndexOf('\') + 1)
 $ComputerWithError = [System.Collections.ArrayList]@()
 $ComputerWithSuccess = [System.Collections.ArrayList]@()
 $ComputerSkipped = [System.Collections.ArrayList]@()
 $TotalRetries = $Retries
 $TotalComputers = $ComputerList.Count
-Do{
+Do {
     Set-Message "-----------------------------------------------------------------"
     Set-Message "Attempt $(($TotalRetries - $Retries) +1) of $($TotalRetries)" -ForegroundColor Cyan
     Set-Message "-----------------------------------------------------------------"
     $Count = 1
-    ForEach ($Computer in $ComputerList){
+    ForEach ($Computer in $ComputerList) {
         Set-Message "COMPUTER $($Computer.ToUpper()) ($($Count) of $($ComputerList.Count))" -ForegroundColor Yellow
         $Count++
-        If($AppName -ne "None"){
+        If ($AppName -ne "None") {
             Set-Message "Checking if $($AppName) version $($AppVersion) is installed on remote computer."
-            try{
-                If(CheckSoftwareInstalled $Computer){
-                    Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
-                    $ComputerSkipped.Add($Computer) | Out-Null
-                    Continue
+            try {
+                $installedApps = CheckSoftwareInstalled $Computer
+                If ($installedApps) {
+                    if ($AppVersion -ne 'all') {
+                        $skipInstallation = $false
+                        foreach ($installedApp in $installedApps) {
+                            try {
+                                if ([System.Version]$installedApps.DisplayVersion -gt [System.Version]$AppVersion) {
+                                    Set-Message "Greater version found on computer. Skipping installation." -ForegroundColor Green
+                                    $ComputerSkipped.Add($Computer) | Out-Null
+                                    $skipInstallation = $true
+                                }
+                                elseif ([System.Version]$installedApps.DisplayVersion -eq [System.Version]$AppVersion) {
+                                    Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
+                                    $ComputerSkipped.Add($Computer) | Out-Null
+                                    $skipInstallation = $true
+                                }
+                                elseif ([System.Version]$installedApps.DisplayVersion -lt [System.Version]$AppVersion) {
+                                    Set-Message "Lower version found on computer." -ForegroundColor Green
+                                }
+                            }
+                            catch {
+                                Set-Message "Error checking software version: $($_.Exception.Message)" -ForegroundColor Red
+                                $skipInstallation = $true
+                            }
+                        }
+                        if ($skipInstallation) {
+                            continue
+                        }
+                    }
+                    else {
+                        Set-Message "Software found on computer. Skipping installation." -ForegroundColor Green
+                        $ComputerSkipped.Add($Computer) | Out-Null
+                        continue
+                    }
                 }
-                Else{
-                    Set-Message "Software not found on remote computer."
+                else {
+                    Set-Message "Software not found on computer."
                 }
-            }catch{
+            }
+            catch {
                 Set-Message "Error connecting: $($_.Exception.Message)" -ForegroundColor Red
                 CheckPSRemoting $Computer
                 $ComputerWithError.Add($Computer) | Out-Null
                 Continue
             }
         }
-        If($WMIQuery -ne "None"){
+        If ($WMIQuery -ne "None") {
             Set-Message "Checking WMI Query on remote computer."
-            try{
-                If(!(CheckWMIQuery $Computer)){
+            try {
+                If (!(CheckWMIQuery $Computer)) {
                     Set-Message "WMI Query result is false. Skipping installation."
                     $ComputerSkipped.Add($Computer) | Out-Null
                     Continue
                 }
-                Else{
+                Else {
                     Set-Message "WMI Query result is true. Continue installation."
                 }
-            }catch{
+            }
+            catch {
                 Set-Message "Error connecting: $($_.Exception.Message)" -ForegroundColor Red
                 CheckPSRemoting $Computer
                 $ComputerWithError.Add($Computer) | Out-Null
@@ -520,74 +557,77 @@ Do{
             }
         }
         Set-Message "Coping $($ApplicationFolderPath) to \\$($Computer)\$($LocalPath -replace ':','$')"
-        try{
+        try {
             Copy-WithProgress "$ApplicationFolderPath" "\\$($Computer)\$("$($LocalPath)\$($ApplicationFolderName)" -replace ':','$')"
-        }catch{
-                Set-Message "Error copying folder: $($_.Exception.Message)" -ForegroundColor Red
-                $ComputerWithError.Add($Computer) | Out-Null
-                Continue;
-            }
-        try{
+        }
+        catch {
+            Set-Message "Error copying folder: $($_.Exception.Message)" -ForegroundColor Red
+            $ComputerWithError.Add($Computer) | Out-Null
+            Continue;
+        }
+        try {
             $ExitCode = InstallRemoteSoftware $Computer
-            If ($ExitCode){
+            If ($ExitCode) {
                 $ComputerWithError.Add($Computer) | Out-Null
                 Set-Message "Error installing $($ApplicationName)." -ForegroundColor Red
             }
-            else{
+            else {
                 Set-Message "$($ApplicationName) installed successfully." -ForegroundColor Green
                 $ComputerWithSuccess.Add($Computer) | Out-Null
             }
-            }catch{
-                Set-Message "Error on remote execution: $($_.Exception.Message)" -ForegroundColor Red
-                $ComputerWithError.Add($Computer) | Out-Null
-                try{
-                    Set-Message "Deleting \\$($Computer)\$($LocalPath -replace ':','$')\$($ApplicationFolderName)"
-                }catch{
-                    Set-Message "Error on remote deletion: $($_.Exception.Message)" -ForegroundColor Red
-                }
+        }
+        catch {
+            Set-Message "Error on remote execution: $($_.Exception.Message)" -ForegroundColor Red
+            $ComputerWithError.Add($Computer) | Out-Null
+            try {
+                Set-Message "Deleting \\$($Computer)\$($LocalPath -replace ':','$')\$($ApplicationFolderName)"
                 Remove-Item "\\$($Computer)\$($LocalPath -replace ':','$')\$($ApplicationFolderName)" -Force -Recurse
-                CheckPSRemoting $Computer
             }
+            catch {
+                Set-Message "Error on remote deletion: $($_.Exception.Message)" -ForegroundColor Red
+            }
+            CheckPSRemoting $Computer
+        }
     }
-    If ($ComputerWithError.Count -eq 0){
+    If ($ComputerWithError.Count -eq 0) {
         break
     }
     $Retries--
-    If ($Retries -gt 0){
-        $ComputerList=$ComputerWithError
+    If ($Retries -gt 0) {
+        $ComputerList = $ComputerWithError
         $ComputerWithError = [System.Collections.ArrayList]@()
-        If ($TimeBetweenRetries -gt 0){
+        If ($TimeBetweenRetries -gt 0) {
             Set-Message "Waiting $($TimeBetweenRetries) seconds before next retry..."
-            Sleep $TimeBetweenRetries
+            Start-Sleep $TimeBetweenRetries
         }
     }
 }While ($Retries -gt 0)
 
-If($ComputerWithError.Count -gt 0){
+if ($ComputerWithError.Count -gt 0) {
     Set-Message "-----------------------------------------------------------------"
     Set-Message "Error installing $($ApplicationName) on $($ComputerWithError.Count) of $($TotalComputers) computers:"
     Set-Message $ComputerWithError
     $csvContents = @()
-    ForEach($Computer in $ComputerWithError){
+    ForEach ($Computer in $ComputerWithError) {
         $row = New-Object System.Object
         $row | Add-Member -MemberType NoteProperty -Name "Name" -Value $Computer
         $csvContents += $row
     }
-    $CSV=(get-date).ToString('yyyyMMdd-HH_mm_ss') + "ComputerWithError.csv"
+    $CSV = (get-date).ToString('yyyyMMdd-HH_mm_ss') + "ComputerWithError.csv"
     $csvContents | Export-CSV -notype -Path "$([Environment]::GetFolderPath("MyDocuments"))\$($CSV)" -Encoding UTF8
     Set-Message "Computers with error exported to CSV file: $([Environment]::GetFolderPath("MyDocuments"))\$($CSV)" -ForegroundColor DarkYellow
     Set-Message "You can retry failed installation on this computers using parameter -CSV $([Environment]::GetFolderPath("MyDocuments"))\$($CSV)" -ForegroundColor DarkYellow
 }
-If ($ComputerWithSuccess.Count -gt 0){
+if ($ComputerWithSuccess.Count -gt 0) {
     Set-Message "-----------------------------------------------------------------"
     Set-Message "$([math]::Round((($ComputerWithSuccess.Count * 100) / $TotalComputers), [System.MidpointRounding]::AwayFromZero) )% Success installing $($ApplicationName) on $($ComputerWithSuccess.Count) of $($TotalComputers) computers:"
     Set-Message $ComputerWithSuccess
 }
-Else{
+elseif ($ComputerSkipped.Count -eq 0) {
     Set-Message "-----------------------------------------------------------------"
     Set-Message "Installation of $($ApplicationName) failed on all computers" -ForegroundColor Red
 }
-If ($ComputerSkipped.Count -gt 0){
+if ($ComputerSkipped.Count -gt 0) {
     Set-Message "-----------------------------------------------------------------"
     Set-Message "$($ComputerSkipped.Count) skipped of $($TotalComputers) computers:"
     Set-Message $ComputerSkipped
