@@ -6,9 +6,9 @@ This script install Java only if a previous version or no version was detected.
 
 You can skip uninstallation of old versions with -NoUninstall switch.
 
-[Install-JRE](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Install-JRE.ps1): to install latest JRE on Windows Computers with GPO.
+[Install-JRE](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20JRE/Install-JRE.ps1): to install latest JRE on Windows Computers with GPO.
 
-[Download-JRE](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Print%20Drivers%20Remotely/Download-JRE.ps1): to run scheduled task on server in order to keep JRE updated in file share.
+[Download-JRE](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20JRE/Download-JRE.ps1): to run scheduled task on server in order to keep JRE updated in file share.
 
 ## Instructions
 
