@@ -141,7 +141,7 @@ else {
 
 if ($Install) {
     Write-Host "Starting installation of JRE $($jreExeVersion) and exiting."
-    Start-Process $InstallPath -ArgumentList "/s SPONSORS=0"
+    Start-Process $InstallPath -ArgumentList "/s SPONSORS=0" -Wait -PassThru | Wait-Process -Timeout 200
 }
 
 if (-not [string]::IsNullOrWhiteSpace($LogPath)) { Stop-Transcript }
