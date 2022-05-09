@@ -1,3 +1,28 @@
+<#
+.SYNOPSIS
+    Redirects user shell folders.
+.DESCRIPTION
+    Redirects user shell folders to a custom path.
+.PARAMETER logPath
+    Log file path.
+    Default "Documents"
+    Example: "\\ES-CPD-BCK02\scripts\FolderRedirection\Log"
+.PARAMETER folders
+    Array of folders to redirect.
+    Check folder names in HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
+    Example: "Personal","My Pictures","Desktop"
+.PARAMETER paths
+    Array of paths to redirect, in the same order than folders array.
+    Example: "D:\%USERNAME%\Documents","D:\%USERNAME%\Pictures","D:\%USERNAME%\Desktop"
+.EXAMPLE
+    .\Redirect-Folder -folders "Personal","My Pictures","Desktop" -paths "D:\%USERNAME%\Documents","D:\%USERNAME%\Pictures","D:\%USERNAME%\Desktop"
+.EXAMPLE
+    .\Redirect-Folder -folders "Personal" -paths "\\SRV-FS01\Users\%USERNAME%\Documents" -logPath "\\SRV-DC01\Scripts\FolderRedirection\Log"
+.LINK
+    https://github.com/juangranados/powershell-scripts/tree/main/Redirect%20Folder
+.NOTES
+    Author: Juan Granados 
+#>
 Param(
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
