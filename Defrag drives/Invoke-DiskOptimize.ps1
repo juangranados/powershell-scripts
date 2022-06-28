@@ -60,6 +60,9 @@ try {
         Exit(3)
     }
     foreach ($drive in $drives) {
+        Write-Host "-------------------"
+        Write-Host "Optimizing drive $($drive.DriveLetter)"
+        Write-Host "-------------------"
         Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) -Verbose
     }
 }
