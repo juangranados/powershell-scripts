@@ -59,7 +59,7 @@ try {
         Exit(3)
     }
     foreach ($drive in $drives) {
-        Optimize-Volume -Driveletter $($drive.DriveLetter) -Verbose
+        Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) -Verbose
     }
     
 }
