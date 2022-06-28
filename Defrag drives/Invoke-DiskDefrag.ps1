@@ -13,6 +13,9 @@
 .PARAMETER forceDefrag
     Defrag disks if free space is low.
     Default: false
+.PARAMETER LogPath
+    Path where save log file.
+    Default: Temp folder
 .EXAMPLE
     Defrag all drives if they are 10% fragmented.
     Invoke-DiskDefrag.ps1
@@ -40,8 +43,6 @@ Param(
     [switch]$forceDefrag
 )
 #Requires -RunAsAdministrator
-$ErrorActionPreference = "Stop"
-$global:output = ""
 
 Function Invoke-DiskDefragmentation($diskToDefrag) {
     
@@ -71,7 +72,8 @@ Function Invoke-DiskDefragmentation($diskToDefrag) {
 
 $ErrorActionPreference = "SilentlyContinue"
 Stop-Transcript | out-null
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
+$global:output = ""
 
 $LogPath = $LogPath.TrimEnd('\')
 if (-not (Test-Path $LogPath)) {
