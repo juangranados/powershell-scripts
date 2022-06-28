@@ -42,6 +42,7 @@ Param(
     [Parameter()]
     [switch]$forceDefrag
 )
+
 #Requires -RunAsAdministrator
 
 Function Invoke-DiskDefragmentation($diskToDefrag) {
@@ -73,6 +74,7 @@ Function Invoke-DiskDefragmentation($diskToDefrag) {
 $ErrorActionPreference = "SilentlyContinue"
 Stop-Transcript | out-null
 $ErrorActionPreference = "Stop"
+
 $global:output = ""
 
 $LogPath = $LogPath.TrimEnd('\')
@@ -80,6 +82,7 @@ if (-not (Test-Path $LogPath)) {
     Write-Host "Log path $($LogPath) not found"
     Exit (1)
 }
+
 Start-Transcript -path "$($LogPath)\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME).txt"
 
 try {
@@ -118,7 +121,6 @@ try {
             Exit(2)
         }
     }
-    
 }
 catch {
     Write-Output "CRITICAL: $($_.Exception.Message)"
