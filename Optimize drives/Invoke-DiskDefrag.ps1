@@ -13,7 +13,7 @@
 .PARAMETER forceDefrag
     Defrag disks if free space is low.
     Default: false
-.PARAMETER LogPath
+.PARAMETER logPath
     Path where save log file.
     Default: Temp folder
 .EXAMPLE
@@ -38,7 +38,7 @@ Param(
     [string[]]$disks = "all",
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$LogPath = $env:temp,
+    [string]$logPath = $env:temp,
     [Parameter()]
     [switch]$forceDefrag
 )
@@ -77,13 +77,13 @@ $ErrorActionPreference = "Stop"
 
 $global:output = ""
 
-$LogPath = $LogPath.TrimEnd('\')
-if (-not (Test-Path $LogPath)) {
-    Write-Host "Log path $($LogPath) not found"
+$logPath = $logPath.TrimEnd('\')
+if (-not (Test-Path $logPath)) {
+    Write-Host "Log path $($logPath) not found"
     Exit (1)
 }
 
-Start-Transcript -path "$($LogPath)\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME).txt"
+Start-Transcript -path "$($logPath)\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME).txt"
 
 try {
     if ($disks -eq "all") {

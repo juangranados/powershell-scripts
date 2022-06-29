@@ -7,9 +7,13 @@
     Disks to run optimization.
     Default: all.
     Example: "C:","D:","F:"
-.PARAMETER LogPath
+.PARAMETER logPath
     Path where save log file.
     Default: Temp folder
+.PARAMETER params
+    Params for Optimize-Volume command
+    Default: -Verbose
+    Example: "-ReTrim -Verbose"
 .EXAMPLE
     Optimize all drives.
     Invoke-DiskOptimize.ps1
@@ -26,7 +30,10 @@ Param(
     [string[]]$disks = "all",
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$LogPath = $env:temp
+    [string]$logPath = $env:temp,
+    [Parameter(Mandatory = $false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$params = "-Verbose"
 )
 #Requires -RunAsAdministrator
 
@@ -34,13 +41,13 @@ $ErrorActionPreference = "SilentlyContinue"
 Stop-Transcript | out-null
 $ErrorActionPreference = "Stop"
 
-$LogPath = $LogPath.TrimEnd('\')
-if (-not (Test-Path $LogPath)) {
-    Write-Host "Log path $($LogPath) not found"
+$logPath = $logPath.TrimEnd('\')
+if (-not (Test-Path $logPath)) {
+    Write-Host "Log path $($logPath) not found"
     Exit (1)
 }
 
-Start-Transcript -path "$($LogPath)\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME).txt"
+Start-Transcript -path "$($logPath)\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME).txt"
 
 try {
     if ($disks -eq "all") {
@@ -63,7 +70,7 @@ try {
         Write-Host "-------------------"
         Write-Host "Optimizing drive $($drive.DriveLetter)"
         Write-Host "-------------------"
-        Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) -Verbose
+        Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) $($params)
     }
 }
 catch {
