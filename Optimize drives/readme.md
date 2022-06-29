@@ -1,7 +1,7 @@
 # **Optimize or defrag Windows Drives**
 
-* [Invoke-DiskOptimize.ps1](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20Drives/Invoke-DiskOptimize.ps1): Runs Windows disks optimization in all or selected drives.
-* [Invoke-DiskDefrag.ps1](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20Drives/Invoke-DiskDefrag.ps1): Runs Windows disks defragmentation in all or selected drives.
+* [Invoke-DiskOptimize.ps1](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20drives/Invoke-DiskOptimize.ps1): Runs Windows disks optimization in all or selected drives.
+* [Invoke-DiskDefrag.ps1](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Optimize%20drives/Invoke-DiskDefrag.ps1): Runs Windows disks defragmentation in all or selected drives.
 
 Examples:
 
