@@ -1,8 +1,8 @@
 ﻿<#
 .SYNOPSIS
-    Run Windows disks optimization.
+    Runs Windows disks optimization.
 .DESCRIPTION
-    Run Windows disks optimization in all or selected drives.
+    Runs Windows disks optimization in all or selected drives.
 .PARAMETER disks
     Disks to run optimization.
     Default: all.

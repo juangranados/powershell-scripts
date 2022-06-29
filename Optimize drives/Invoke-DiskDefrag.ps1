@@ -1,8 +1,8 @@
 ﻿<#
 .SYNOPSIS
-    Run Windows disks defragmentation.
+    Runs Windows disks defragmentation.
 .DESCRIPTION
-    Run Windows disks defragmentation in all or selected drives.
+    Runs Windows disks defragmentation in all or selected drives.
 .PARAMETER disks
     Disks to run defragmentation.
     Default: all.
