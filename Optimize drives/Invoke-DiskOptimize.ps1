@@ -70,7 +70,7 @@ try {
         Write-Host "-------------------"
         Write-Host "Optimizing drive $($drive.DriveLetter)"
         Write-Host "-------------------"
-        Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) $($params)
+        Invoke-Expression "Optimize-Volume -Driveletter $($drive.DriveLetter.TrimEnd(':')) $params"
     }
 }
 catch {
