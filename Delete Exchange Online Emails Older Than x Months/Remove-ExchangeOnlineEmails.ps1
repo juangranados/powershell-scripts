@@ -31,10 +31,12 @@
 .PARAMETER logPath
     Path where save log file.
     Default: Temp folder
+.PARAMETER preview
+    Only shows matching emails. It will not delete anything.
 .EXAMPLE
-    Defrag-WinSearchDB -LogPath "\\ES-CPD-BCK02\Log" -TempPath \\ES-CPD-BCK02\Temp
+    Remove-ExchangeOnlineEmails.ps1 -LogPath "C:\temp\Log" -target esmith@contoso.com -months 12
 .EXAMPLE
-    Defrag-WinSearchDB -TempPath "D:\Temp"
+    Remove-ExchangeOnlineEmails.ps1 -target finance@contoso.com -months 24
 .LINK
     https://github.com/juangranados/powershell-scripts/tree/main/Delete%20Exchange%20Online%20Emails%20Older%20Than%20x%20Months
 .NOTES
@@ -46,45 +48,81 @@ Param(
     [string]$target,
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
-    [ValidateRange("Positive")]
+    [ValidateRange(0, 100)]
     [int]$months,
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$logPath = $env:temp
+    [string]$logPath = $env:temp,
+    [Parameter()]
+    [switch]$preview
 )
-Connect-ExchangeOnline
-Connect-IPPSSession
 
-$searchName = "target_messages_older_than_$($months)_months"
-if (Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue) {
-    Write-Host "Compliance Search: $searchName exists. Changing properties"
-    Set-ComplianceSearch -Name $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")))"
-}
-else {
-    Write-Host "Creationg Compliance Search: $searchName"
-    New-ComplianceSearch -Name $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")))"
-}
-Write-Host "Running Compliance Search: $searchName"
-Start-ComplianceSearch -Identity $searchName
+$ErrorActionPreference = "SilentlyContinue"
+Stop-Transcript | out-null
+$ErrorActionPreference = "Stop"
 
-While ((Get-ComplianceSearch  -Identity $searchName).status -ne "Completed") {
-    Write-Host "."
-    Start-Sleep 5
+$logPath = $logPath.TrimEnd('\')
+if (-not (Test-Path $logPath)) {
+    Write-Host "Log path $($logPath) not found"
+    Exit (1)
 }
 
-$searchActionName = "$($searchName)_preview"
-if (Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction SilentlyContinue) {
-    Write-Host "Compliance Search Action : $searchName exists. Deleting"
-    Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false
+Start-Transcript -path "$($logPath)\$(get-date -Format yyyy_MM_dd)_Remove-ExchangeOnlineEmails.txt"
+
+$sessions = Get-PSSession | Select-Object -Property State, Name, ComputerName
+$exchangeOnlineConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=outlook.office365.com*').Count -gt 0
+$complianceConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=*compliance.protection.outlook.com*').Count -gt 0
+if (!$exchangeOnlineConnection) {
+    Connect-ExchangeOnline
 }
-Write-Host "Creating Compliance Search Action : $searchActionName"
-New-ComplianceSearchAction SearchName $searchName -Preview
-Write-Host "Waiting for Compliance Search Action to finish"
-While ((Get-ComplianceSearchAction -Identity $searchActionName).status -ne "Completed") {
-    Write-Host "."
-    Start-Sleep 5
+if (-not $complianceConnection) {
+    Connect-IPPSSession
 }
-Get-ComplianceSearchAction  -Identity $searchActionName | Format-List -Property Results
-#Delete
-#New-ComplianceSearchAction -SearchName $searchActionName -Purge -PurgeType SoftDelete
-#Get-ComplianceSearchAction  -Identity $searchActionName | Format-List -Property Results
+
+$searchName = "$($target)_messages_older_than_$($months)_months"
+try {
+    if (Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue) {
+        Write-Host "Compliance Search: $searchName exists. Changing properties"
+        Set-ComplianceSearch -Identity $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")))" -ErrorAction "Stop"
+    }
+    else {
+        Write-Host "Creating Compliance Search: $searchName"
+        New-ComplianceSearch -Name $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")))" -ErrorAction "Stop"
+    }
+    Write-Host "Running Compliance Search: $searchName"
+    Start-ComplianceSearch -Identity $searchName -ErrorAction "Stop"
+
+    While ((Get-ComplianceSearch  -Identity $searchName -ErrorAction "Stop").status -ne "Completed") {
+        Write-Host "." -NoNewLine
+        Start-Sleep 5
+    }
+    $complianceSearchResults = Get-ComplianceSearch  -Identity $searchName -ErrorAction "Stop"
+    if ($complianceSearchResults.Items -le 0) {
+        Write-Host "Compliance Search returned 0 items"
+        Stop-Transcript
+        Exit
+    }
+    $searchActionName = "$($searchName)_preview"
+    if (Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction SilentlyContinue) {
+        Write-Host "Compliance Search Action : $searchName exists. Deleting"
+        Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false -ErrorAction "Stop"
+    }
+    if ($preview) {
+        Write-Host "Creating Compliance Search Action for Preview: $searchActionName"
+        New-ComplianceSearchAction SearchName $searchName -Preview -ErrorAction "Stop"
+    }
+    else {
+        Write-Host "Creating Compliance Search Action for Deletion: $searchActionName"
+        New-ComplianceSearchAction -SearchName $searchActionName -Purge -PurgeType SoftDelete -ErrorAction "Stop"
+    }
+    Write-Host "Waiting for Compliance Search Action to finish"
+    While ((Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction "Stop").status -ne "Completed") {
+        Write-Host "."
+        Start-Sleep 5
+    }
+    Get-ComplianceSearchAction  -Identity $searchActionName -ErrorAction "Stop" | Format-List -Property Results
+}
+catch {
+    Write-Error "An error occurred: $_"
+}
+Stop-Transcript
