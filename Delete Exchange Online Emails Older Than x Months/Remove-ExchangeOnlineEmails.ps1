@@ -80,7 +80,6 @@ function Get-ParsedLog([string]$log) {
     $table.columns.add($(New-Object system.Data.DataColumn ReceivedTime, ([Datetime])))
     $table.columns.add($(New-Object system.Data.DataColumn DataLink, ([string])))
     ForEach ($line in $($log -split "`r`n")) {
-        Write-host $line
         $row = $table.NewRow()
         $row.Location = Get-StringBetweenTwoStrings "Location: " "; Sender:" $line
         $row.Sender = Get-StringBetweenTwoStrings "Sender: " "; Subject:" $line
