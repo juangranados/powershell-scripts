@@ -103,14 +103,15 @@ if (-not (Test-Path $logPath)) {
 }
 
 Start-Transcript -path "$($logPath)\$(get-date -Format yyyy_MM_dd)_Remove-ExchangeOnlineEmails.txt"
-
-$sessions = Get-PSSession | Select-Object -Property State, Name, ComputerName
-$exchangeOnlineConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=outlook.office365.com*').Count -gt 0
-$complianceConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=*compliance.protection.outlook.com*').Count -gt 0
 if (-not (Get-InstalledModule -Name  ExchangeOnlineManagement)) {
     Write-Host "ExchangeOnlineManagement module not found! Run: Install-Module -Name ExchangeOnlineManagement"
     Exit
 }
+
+$sessions = Get-PSSession | Select-Object -Property State, Name, ComputerName
+$exchangeOnlineConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=outlook.office365.com*').Count -gt 0
+$complianceConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=*compliance.protection.outlook.com*').Count -gt 0
+
 if (!$exchangeOnlineConnection) {
     Connect-ExchangeOnline
 }
