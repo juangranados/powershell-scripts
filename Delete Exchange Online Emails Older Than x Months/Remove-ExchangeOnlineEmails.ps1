@@ -22,10 +22,12 @@
 .SYNOPSIS
     Delete Exchange Online Emails Older Than x Months.
 .DESCRIPTION
-    Delete Exchange Online Emails Older Than x Months from a mailbox or distribution group.
+    Delete Exchange Online Emails Older Than x Months from a mailbox.
     Running user has to be member of eDiscovery Manager group: https://docs.microsoft.com/en-us/microsoft-365/compliance/assign-ediscovery-permissions?view=o365-worldwide
+    in order to run New-ComplianceSearchAction.
+    Thanks to: https://answers.microsoft.com/en-us/msoffice/forum/all/delete-more-than-10-items-from-a-mailbox-using/f28efa60-3766-4f50-af2d-e1f9be588931
 .PARAMETER target
-    Mailbox or distribution group to delete emails from.
+    Mailboxto delete emails from.
 .PARAMETER months
     Emails older than this number of months will be deleted
 .PARAMETER logPath
@@ -36,9 +38,9 @@
 .PARAMETER deleteComplianceSearch
     Deletes Compliance Search object after using it.
 .EXAMPLE
-    Remove-ExchangeOnlineEmails.ps1 -LogPath "C:\temp\Log" -target esmith@contoso.com -months 12
+    Remove-ExchangeOnlineEmails.ps1 -LogPath "C:\temp\Log" -target esmith@contoso.com -months 12 -preview
 .EXAMPLE
-    Remove-ExchangeOnlineEmails.ps1 -target finance@contoso.com -months 24
+    Remove-ExchangeOnlineEmails.ps1 -target finance@contoso.com -months 24 -deleteComplianceSearch
 .LINK
     https://github.com/juangranados/powershell-scripts/tree/main/Delete%20Exchange%20Online%20Emails%20Older%20Than%20x%20Months
 .NOTES
@@ -64,6 +66,7 @@ Param(
 $ErrorActionPreference = "SilentlyContinue"
 Stop-Transcript | out-null
 $ErrorActionPreference = "Stop"
+
 function Get-StringBetweenTwoStrings([string]$firstString, [string]$secondString, [string]$string) {
     $pattern = "$firstString(.*?)$secondString"
     $result = [regex]::Match($string, $pattern).Groups[1].Value
@@ -104,6 +107,10 @@ Start-Transcript -path "$($logPath)\$(get-date -Format yyyy_MM_dd)_Remove-Exchan
 $sessions = Get-PSSession | Select-Object -Property State, Name, ComputerName
 $exchangeOnlineConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=outlook.office365.com*').Count -gt 0
 $complianceConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=*compliance.protection.outlook.com*').Count -gt 0
+if (-not (Get-InstalledModule -Name  ExchangeOnlineManagement)) {
+    Write-Host "ExchangeOnlineManagement module not found! Run: Install-Module -Name ExchangeOnlineManagement"
+    Exit
+}
 if (!$exchangeOnlineConnection) {
     Connect-ExchangeOnline
 }
@@ -112,15 +119,37 @@ if (-not $complianceConnection) {
     Connect-IPPSSession
 }
 
+$folderQueries = @()
+$folderStatistics = Get-MailboxFolderStatistics $target | where-object { ($_.FolderPath -eq "/Recoverable Items") -or ($_.FolderPath -eq "/Purges") -or ($_.FolderPath -eq "/Versions") -or ($_.FolderPath -eq "/DiscoveryHolds") }
+foreach ($folderStatistic in $folderStatistics) {
+    $folderId = $folderStatistic.FolderId;
+    $folderPath = $folderStatistic.FolderPath;
+    $encoding = [System.Text.Encoding]::GetEncoding("us-ascii")
+    $nibbler = $encoding.GetBytes("0123456789ABCDEF");
+    $folderIdBytes = [Convert]::FromBase64String($folderId);
+    $indexIdBytes = New-Object byte[] 48;
+    $indexIdIdx = 0;
+    $folderIdBytes | Select-Object -skip 23 -First 24 | ForEach-Object { $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -shr 4]; $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -band 0xF] }
+    $folderQuery = "folderid:$($encoding.GetString($indexIdBytes))";
+    $folderStat = New-Object PSObject
+    Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderPath -Value $folderPath
+    Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderQuery -Value $folderQuery
+    $folderQueries += $folderStat
+}
+       
+$RecoverableItemsFolder = $folderQueries.folderquery[0]
+$PurgesFolder = $folderQueries.folderquery[1]
+$VersionsFolder = $folderQueries.folderquery[2]
+$DiscoveryHoldsFolder = $folderQueries.folderquery[3]
 $searchName = "$($target)_emails_older_than_$($months)_months"
 try {
     if (Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue) {
         Write-Host "Compliance Search $searchName exists. Changing properties"
-        Set-ComplianceSearch -Identity $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")) AND (kind:email))" -ErrorAction "Stop"
+        Set-ComplianceSearch -Identity $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy"))) AND (kind:email) AND (NOT (($RecoverableItemsFolder) OR ($PurgesFolder) OR ($VersionsFolder) OR ($DiscoveryHoldsFolder)))" -ErrorAction "Stop"
     }
     else {
         Write-Host "Creating Compliance Search $searchName"
-        New-ComplianceSearch -Name $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy")))" -ErrorAction "Stop"
+        New-ComplianceSearch -Name $searchName -ExchangeLocation $target -ContentMatchQuery "(Received <= $((get-date).AddMonths(-$months).ToString("MM/dd/yyy"))) AND (kind:email) AND (NOT (($RecoverableItemsFolder) OR ($PurgesFolder) OR ($VersionsFolder) OR ($DiscoveryHoldsFolder)))" -ErrorAction "Stop"
     }
     Write-Host "Running Compliance Search $searchName"
     Start-ComplianceSearch -Identity $searchName -ErrorAction "Stop"
@@ -135,34 +164,80 @@ try {
         Write-Host "Compliance Search returned 0 items"
     }
     else {
-        $searchActionName = "$($searchName)_preview"
-        if (Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction SilentlyContinue) {
-            Write-Host "Compliance Search Action $searchActionName exists. Deleting"
-            Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false -ErrorAction "Stop"
+        if ($complianceSearchResults.ExchangeLocation.count -ne 1) {
+            Write-Host "You have selected a Compliance Search scoped for more than 1 mailbox, please restart and select a search scoped for a single mailbox."
+            if ($deleteComplianceSearch) {
+                Write-Host "Deleting object $searchName"
+                Remove-ComplianceSearch -Identity $searchName -Confirm:$false -ErrorAction "Stop"
+            }
+            Exit
         }
+        Write-Host "Compliance Search returned $($complianceSearchResults.Items) items"
         if ($preview) {
+            $searchActionName = "$($searchName)_preview"
+            if (Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction SilentlyContinue) {
+                Write-Host "Compliance Search Action $searchActionName exists. Deleting"
+                Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false -ErrorAction "Stop"
+            }
             Write-Host "Creating Compliance Search Action for Preview $searchActionName"
-            New-ComplianceSearchAction -SearchName $searchName -Preview -ErrorAction "Stop"
+            New-ComplianceSearchAction -SearchName $searchName -Preview -ErrorAction "Stop" | Out-Null
+            
+            Write-Host "Waiting for Compliance Search Action to finish"
+            While ((Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction "Stop").status -ne "Completed") {
+                Write-Host "." -NoNewline
+                Start-Sleep 5
+            }
+            Write-Host "."
+            $complianceSearchActionResult = Get-ParsedLog (Get-ComplianceSearchAction $searchActionName -Details).Results
+            $complianceSearchActionResult | Out-GridView -Title "Compliance Search Preview"
         }
         else {
-            Write-Host "Creating Compliance Search Action for Deletion $searchActionName"
-            New-ComplianceSearchAction -SearchName $searchActionName -Purge -PurgeType SoftDelete -ErrorAction "Stop"
+            $searchActionName = "$($searchName)_purge"
+            [int]$batches = [math]::floor($complianceSearchResults.Items / 10)
+            if (Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction SilentlyContinue) {
+                Write-Host "Compliance Search Action $searchActionName exists. Deleting"
+                Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false -ErrorAction "Stop" | Out-Null
+            }
+            for ($batch = 1; $batch -le $batches; $batch++) {
+                Write-Host "Batch $batch of $batches" -ForegroundColor Cyan
+                Write-Host "Creating Compliance Search Action for Deletion $searchActionName"
+                $repeat = $true
+                $i = 1
+                while ($repeat) {
+                    try {
+                        New-ComplianceSearchAction -SearchName $searchName -Purge -PurgeType HardDelete -Confirm:$false -ErrorAction "Stop" | Out-Null
+                        $repeat = $false
+                    }
+                    catch {
+                        Write-Host "Error trying to create Compliance Search Action. Waiting 5 seconds until next try. Try $i of 5"
+                        Start-Sleep -Seconds 5
+                        Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false -ErrorAction "SilentlyContinue" | Out-Null
+                        if ($i -lt 6) {
+                            $i++
+                        }
+                        else {
+                            Write-Host "Cannot create new Compliance Search Action" -ForegroundColor Red
+                            if ($deleteComplianceSearch) {
+                                Write-Host "Deleting object $searchName"
+                                Remove-ComplianceSearch -Identity $searchName -Confirm:$false -ErrorAction "Stop"
+                            }
+                            Exit
+                        }
+                    }
+                }
+                $complianceSearchActionStatus = (Get-ComplianceSearchAction -Identity $searchActionName).status
+                Write-Host "Waiting for Compliance Search Action to finish"
+                do {
+                    Write-Host "." -NoNewline
+                    Start-Sleep 5
+                    $complianceSearchActionStatus = (Get-ComplianceSearchAction -Identity $searchActionName).status
+                } while ($complianceSearchActionStatus -ne "Completed")
+                Write-Host "."
+                Write-Host "10 items deleted. $($complianceSearchResults.Items - (10 * $batch)) remaining" -ForegroundColor Green
+                Write-Host "Deleting Compliance Search Action $searchActionName"
+                Remove-ComplianceSearchAction -Identity $searchActionName -Confirm:$false | Out-Null
+            }
         }
-        Write-Host "Waiting for Compliance Search Action to finish"
-        While ((Get-ComplianceSearchAction -Identity $searchActionName -ErrorAction "Stop").status -ne "Completed") {
-            Write-Host "." -NoNewline
-            Start-Sleep 5
-        }
-        Write-Host "."
-        $complianceSearchActionResult = (Get-ComplianceSearchAction $searchActionName -Details).Results
-        $complianceSearchActionResult = Get-ParsedLog $complianceSearchActionResult
-        if ($preview) {
-            $windowTitle = "Compliance Search Preview"
-        }
-        else {
-            $windowTitle = "Compliance Search Deleted this emails"
-        }
-        $complianceSearchActionResult | Out-GridView -Title $windowTitle
     }
     
     if ($deleteComplianceSearch) {
