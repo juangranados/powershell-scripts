@@ -20,9 +20,9 @@
 
 <#
 .SYNOPSIS
-    Delete Exchange Online Emails Older Than x Months.
+    Delete Exchange Online emails older than x months from a mailbox.
 .DESCRIPTION
-    Delete Exchange Online Emails Older Than x Months from a mailbox.
+    Delete Exchange Online emails older than x months from a mailbox.
     Running user has to be member of eDiscovery Manager group: https://docs.microsoft.com/en-us/microsoft-365/compliance/assign-ediscovery-permissions?view=o365-worldwide
     in order to run New-ComplianceSearchAction.
     Thanks to: https://answers.microsoft.com/en-us/msoffice/forum/all/delete-more-than-10-items-from-a-mailbox-using/f28efa60-3766-4f50-af2d-e1f9be588931
@@ -107,37 +107,46 @@ if (-not (Get-InstalledModule -Name  ExchangeOnlineManagement)) {
     Write-Host "ExchangeOnlineManagement module not found! Run: Install-Module -Name ExchangeOnlineManagement"
     Exit
 }
-
+Write-Host "Checking Exchange Online and Compliance connection"
 $sessions = Get-PSSession | Select-Object -Property State, Name, ComputerName
 $exchangeOnlineConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=outlook.office365.com*').Count -gt 0
 $complianceConnection = (@($sessions) -like '@{State=Opened; Name=ExchangeOnlineInternalSession*; ComputerName=*compliance.protection.outlook.com*').Count -gt 0
 
 if (!$exchangeOnlineConnection) {
-    Connect-ExchangeOnline
+    Write-Host "Connecting Exchange Online"
+    Connect-ExchangeOnline -ErrorAction Stop
 }
 
 if (-not $complianceConnection) {
-    Connect-IPPSSession
+    Write-Host "Connecting Compliance"
+    Connect-IPPSSession -ErrorAction Stop
 }
 
+Write-Host "Checking target"
 $folderQueries = @()
 $folderStatistics = Get-MailboxFolderStatistics $target | where-object { ($_.FolderPath -eq "/Recoverable Items") -or ($_.FolderPath -eq "/Purges") -or ($_.FolderPath -eq "/Versions") -or ($_.FolderPath -eq "/DiscoveryHolds") }
-foreach ($folderStatistic in $folderStatistics) {
-    $folderId = $folderStatistic.FolderId;
-    $folderPath = $folderStatistic.FolderPath;
-    $encoding = [System.Text.Encoding]::GetEncoding("us-ascii")
-    $nibbler = $encoding.GetBytes("0123456789ABCDEF");
-    $folderIdBytes = [Convert]::FromBase64String($folderId);
-    $indexIdBytes = New-Object byte[] 48;
-    $indexIdIdx = 0;
-    $folderIdBytes | Select-Object -skip 23 -First 24 | ForEach-Object { $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -shr 4]; $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -band 0xF] }
-    $folderQuery = "folderid:$($encoding.GetString($indexIdBytes))";
-    $folderStat = New-Object PSObject
-    Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderPath -Value $folderPath
-    Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderQuery -Value $folderQuery
-    $folderQueries += $folderStat
+if ($folderStatistics) {
+    foreach ($folderStatistic in $folderStatistics) {
+        $folderId = $folderStatistic.FolderId;
+        $folderPath = $folderStatistic.FolderPath;
+        $encoding = [System.Text.Encoding]::GetEncoding("us-ascii")
+        $nibbler = $encoding.GetBytes("0123456789ABCDEF");
+        $folderIdBytes = [Convert]::FromBase64String($folderId);
+        $indexIdBytes = New-Object byte[] 48;
+        $indexIdIdx = 0;
+        $folderIdBytes | Select-Object -skip 23 -First 24 | ForEach-Object { $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -shr 4]; $indexIdBytes[$indexIdIdx++] = $nibbler[$_ -band 0xF] }
+        $folderQuery = "folderid:$($encoding.GetString($indexIdBytes))";
+        $folderStat = New-Object PSObject
+        Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderPath -Value $folderPath
+        Add-Member -InputObject $folderStat -MemberType NoteProperty -Name FolderQuery -Value $folderQuery
+        $folderQueries += $folderStat
+    }
 }
-       
+else {
+    Write-Host "$target statistics not found. Exiting" -ForegroundColor Red
+    Exit
+}
+
 $RecoverableItemsFolder = $folderQueries.folderquery[0]
 $PurgesFolder = $folderQueries.folderquery[1]
 $VersionsFolder = $folderQueries.folderquery[2]
