@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Remove-ExchangeOnlineEmails Script",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}\\Delete Exchange Online Emails Older Than x Months\\Remove-ExchangeOnlineEmails.ps1",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "-target \"soporte@3digits.es\" -months 13 -deleteComplianceSearch"
+      ]
+    }
+  ]
+}
