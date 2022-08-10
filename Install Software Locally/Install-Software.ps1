@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Install software using RZGet repository from https://ruckzuck.tools/
+    Install/Update/Uninstall software using RZGet repository from https://ruckzuck.tools/
 .DESCRIPTION
-    Install software using RZGet repository from https://ruckzuck.tools/
+    Install/Update/Uninstall software using RZGet repository from https://ruckzuck.tools/
 .PARAMETER tempFolder
     Folder to download installers
     Default: "C:\temp\InstallSoftware"
 .PARAMETER software
-    List of software to install. Check https://github.com/rzander/ruckzuck/wiki/RZGet and https://ruckzuck.tools/Home/Repository
+    List of software to install. Check https://ruckzuck.tools/Home/Repository
     Default: None
     Example: "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman"
 .PARAMETER logFolder
@@ -18,13 +18,15 @@
     Uninstall software if it is already installed
 .PARAMETER checkOnly
     Check if software list is already installed
+.PARAMETER runAsAdmin
+    Check if script is elevated
 .EXAMPLE
     .\Install-Software -tempFolder C:\temp\InstallSoftware -software "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman" -logFolder "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
 .LINK
     https://github.com/juangranados/powershell-scripts/tree/main/Install%20Software%20Locally
 .NOTES
     Thanks to Roger Zander for his amazing tool: https://ruckzuck.tools/
-    Author: Juan Granados 
+    Author: Juan Granados
 #>
 Param(
     [Parameter(Mandatory = $false)]
@@ -50,8 +52,11 @@ function Set-Folder([string]$folderPath) {
             New-Item $folderPath -ItemType directory
         }
         catch {
-            Write-Warning "Error creating $folderPath"
-            Stop-Transcript
+            Write-Error "Error creating $folderPath"
+            try {
+                Stop-Transcript
+            }
+            catch { Write-Warning $Error[0] }
             Exit 1
         }
     }
@@ -99,6 +104,16 @@ function Get-AppInstaller ($files) {
     foreach ($file in $files) {
         $filePath = "$tempFolder\$($file.FileName)"
         try {
+            if (-not $file.URL.StartsWith("http")) {
+                try {
+                    $file.URL = Invoke-Expression -Command $file.URL
+                }
+                catch { Write-Warning $Error[0] }
+                if (-not $file.URL) {
+                    Write-Warning "Error getting file URL"
+                    return $false
+                }
+            }
             Write-Host "Downloading $($file.URL)"
             $ProgressPreference = 'SilentlyContinue'
             Invoke-WebRequest $file.URL -OutFile $filePath
@@ -119,13 +134,14 @@ function Get-AppInstaller ($files) {
         }
         else {
             Write-Warning "File size mismatch"
-        } if (Get-FileHashIsOk $filePath $file.HashType $file.FileHash) {
+        } 
+        if (Get-FileHashIsOk $filePath $file.HashType $file.FileHash) {
             Write-Host "File hash is ok"
         }
         else {
-            Write-Warning "F((e hash fismatch"
-            ZZZZZreturn $f tsets -Displ yLevet StdOutts -Displ yLevet StdOutts -Displ yLevet StdOutts -Displ yLevet StdOutts -DisplayLevel StdOut
-        }scriptTranscriptscriptTranscriptscriptTranscriptscriptTranscriptscriptTranscript
+            Write-Warning "File hash mismatch"
+            return $false
+        }
     }
     return $true
 }
@@ -151,13 +167,20 @@ if ($runAsAdmin) {
     Write-Host "Checking for elevated permissions"
     if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
         Write-Error "Insufficient permissions to run this script. Execute PowerShell script as an administrator."
-        Stop-Transcript
+        try {
+            Stop-Transcript
+        }
+        catch { Write-Warning $Error[0] }
         Exit 1
     }
     Write-Host "Script is elevated"
 }
 Write-Host "Checking for software in computer"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$apiUrl = Invoke-RestMethod -Uri "https://ruckzuck.tools/rest/v2/geturl"
+if ([string]::IsNullOrEmpty($apiUrl)) {
+    Write-Error "RuckZuck API can not be found"
+}
 foreach ($app in $software) {
     $ULine = '-' * $app.Length
     Write-Host -Object $ULine -ForegroundColor DarkCyan
@@ -165,7 +188,8 @@ foreach ($app in $software) {
     Write-Host -Object $ULine -ForegroundColor DarkCyan
     $uriApp = [uri]::EscapeDataString($app)
     try {
-        $appJson = Invoke-WebRequest "https://cdn.ruckzuck.tools/rest/v2/getsoftwares?shortname=$uriApp" | ConvertFrom-Json
+        $ProgressPreference = 'SilentlyContinue'
+        $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?shortname=$uriApp" | ConvertFrom-Json
     }
     catch {
         Write-Warning $Error[0]
@@ -174,7 +198,7 @@ foreach ($app in $software) {
         $isSoftwareInstalled = Invoke-Expression -Command $appJson.PSDetection
         if ($isSoftwareInstalled) {
             Write-Host "$app is installed on computer" -ForegroundColor Green
-            if ($uninstall) {
+            if ($uninstall -and -not $checkOnly) {
                 Write-Host "Running uninstall command"
                 try {
                     Invoke-Expression -Command $appJson.PSUninstall
