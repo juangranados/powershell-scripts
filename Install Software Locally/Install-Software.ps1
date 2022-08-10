@@ -1,93 +1,46 @@
 <#
 .SYNOPSIS
-    Install software using RZGet from ruckzuck.tools
+    Install software using RZGet repository from https://ruckzuck.tools/
 .DESCRIPTION
-    Install software using RZGet from ruckzuck.tools
-.PARAMETER folder
-    Folder to download RZGet.exe
+    Install software using RZGet repository from https://ruckzuck.tools/
+.PARAMETER tempFolder
+    Folder to download installers
     Default: "C:\temp\InstallSoftware"
-.PARAMETER RZGetArguments
-    RZget Arguments. Check https://github.com/rzander/ruckzuck/wiki/RZGet and https://ruckzuck.tools/Home/Repository
-    Default: "update --all"
-    Example: 'install 7-Zip Notepad++(x64) Edge "3CXPhone for Windows" "Google Chrome"'
-.PARAMETER logPath
+.PARAMETER software
+    List of software to install. Check https://github.com/rzander/ruckzuck/wiki/RZGet and https://ruckzuck.tools/Home/Repository
+    Default: None
+    Example: "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman"
+.PARAMETER logFolder
     Log file path.
     Default: "C:\temp\InstallSoftware"
     Example: "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
+.PARAMETER uninstall
+    Uninstall software if it is already installed
+.PARAMETER checkOnly
+    Check if software list is already installed
 .EXAMPLE
-    .\Install-Software -folder C:\temp\InstallSoftware -RZGetArguments 'install 7-Zip Notepad++(x64) Edge "3CXPhone for Windows" "Google Chrome"' logPath "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
+    .\Install-Software -tempFolder C:\temp\InstallSoftware -software "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman" -logFolder "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
 .LINK
     https://github.com/juangranados/powershell-scripts/tree/main/Install%20Software%20Locally
 .NOTES
+    Thanks to Roger Zander for his amazing tool: https://ruckzuck.tools/
     Author: Juan Granados 
 #>
 Param(
     [Parameter(Mandatory = $false)]
     [ValidateNotNullOrEmpty()]
-    [string]$folder = 'C:\temp\InstallSoftware',
-    [Parameter(Mandatory = $false)]
-    [string]$RZGetArguments = "update --all",
+    [string]$tempFolder = 'C:\temp\InstallSoftware',
+    [Parameter(Mandatory = $true)]
+    [string[]]$software,
     [Parameter(Mandatory = $false)] 
-    [string]$logPath = 'C:\temp\InstallSoftware'
+    [string]$logFolder = 'C:\temp\InstallSoftware',
+    [Parameter()]
+    [switch]$uninstall,
+    [Parameter()]
+    [switch]$checkOnly,
+    [Parameter()]
+    [switch]$runAsAdmin
 )
-## ------------------------------------------------------------------
-# function Invoke-Process
-# https://stackoverflow.com/a/66700583
-## ------------------------------------------------------------------
-function Invoke-Process {
-    param
-    (
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$FilePath,
-
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]$ArgumentList,
-
-        [ValidateSet("Full", "StdOut", "StdErr", "ExitCode", "None")]
-        [string]$DisplayLevel
-    )
-
-    $ErrorActionPreference = 'Stop'
-
-    try {
-        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-        $pinfo.FileName = $FilePath
-        $pinfo.RedirectStandardError = $true
-        $pinfo.RedirectStandardOutput = $true
-        $pinfo.UseShellExecute = $false
-        $pinfo.WindowStyle = 'Hidden'
-        $pinfo.CreateNoWindow = $true
-        $pinfo.Arguments = $ArgumentList
-        $p = New-Object System.Diagnostics.Process
-        $p.StartInfo = $pinfo
-        $p.Start() | Out-Null
-        $result = [pscustomobject]@{
-            Title     = ($MyInvocation.MyCommand).Name
-            Command   = $FilePath
-            Arguments = $ArgumentList
-            StdOut    = $p.StandardOutput.ReadToEnd()
-            StdErr    = $p.StandardError.ReadToEnd()
-            ExitCode  = $p.ExitCode
-        }
-        $p.WaitForExit()
-
-        if (-not([string]::IsNullOrEmpty($DisplayLevel))) {
-            switch ($DisplayLevel) {
-                "Full" { return $result; break }
-                "StdOut" { return $result.StdOut; break }
-                "StdErr" { return $result.StdErr; break }
-                "ExitCode" { return $result.ExitCode; break }
-            }
-        }
-    }
-    catch {
-        Write-Warning "An error has ocurred"
-        Stop-Transcript
-        Exit 1
-    }
-}
 function Set-Folder([string]$folderPath) {
     if ($folderPath.Chars($folderPath.Length - 1) -eq '\') {
         $folderPath = ($folderPath.TrimEnd('\'))
@@ -103,27 +56,184 @@ function Set-Folder([string]$folderPath) {
         }
     }
 }
-
+function Get-FileHashIsOk([string]$filePath, [string]$hashType, [string]$hash) {
+    if ($hashType.ToUpper() -eq "X509") {
+        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($filePath)
+        $certHash = $cert.GetCertHashString().ToLower().Replace(" ", "")
+        if ($certHash -ne $hash) {
+            return $false
+        }
+        else {
+            return $true
+        }
+    }
+    elseif (($hashType.ToUpper() -eq "MD5")) {
+        $fileHash = Get-FileHash $filePath -Algorithm MD5
+        if ($fileHash.Hash -ne $hash) {
+            return $false
+        }
+        else {
+            return $true
+        }
+    }
+    elseif (($hashType.ToUpper() -eq "SHA1")) {
+        $fileHash = Get-FileHash $filePath -Algorithm SHA1
+        if ($fileHash.Hash -ne $hash) {
+            return $false
+        }
+        else {
+            return $true
+        }
+    }
+    elseif (($hashType.ToUpper() -eq "SHA256")) {
+        $fileHash = Get-FileHash $filePath -Algorithm SHA256
+        if ($fileHash.Hash -ne $hash) {
+            return $false
+        }
+        else {
+            return $true
+        }
+    }
+}
+function Get-AppInstaller ($files) {
+    foreach ($file in $files) {
+        $filePath = "$tempFolder\$($file.FileName)"
+        try {
+            Write-Host "Downloading $($file.URL)"
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest $file.URL -OutFile $filePath
+        }
+        catch {
+            Write-Warning "Error downloading file"
+            return $false
+        }
+        if (Test-Path $filePath) {
+            Write-Host "File downloaded"
+        }
+        else {
+            Write-Warning "File $filePath not found"
+            return $false
+        } 
+        if ((Get-Item $filePath).Length -eq $file.FileSize) {
+            Write-Host "File size is ok"
+        }
+        else {
+            Write-Warning "File size mismatch"
+        } if (Get-FileHashIsOk $filePath $file.HashType $file.FileHash) {
+            Write-Host "File hash is ok"
+        }
+        else {
+            Write-Warning "F((e hash fismatch"
+            ZZZZZreturn $f tsets -Displ yLevet StdOutts -Displ yLevet StdOutts -Displ yLevet StdOutts -Displ yLevet StdOutts -DisplayLevel StdOut
+        }scriptTranscriptscriptTranscriptscriptTranscriptscriptTranscriptscriptTranscript
+    }
+    return $true
+}
+function Invoke-FilesDeletion ($files) {
+    foreach ($file in $files) {
+        $filePath = "$tempFolder\$($file.FileName)"
+        Write-Host "Deleting file $filePath"
+        Remove-Item -Path $filePath -Force -Confirm:$false
+    }
+}
+#https://cdn.ruckzuck.tools/rest/v2/GetCatalog
 $ErrorActionPreference = 'Stop'
-Set-Folder $folder
-Set-Folder $logPath
+Set-Folder $tempFolder
+Set-Folder $logFolder
+Set-Location $tempFolder
+$transcriptFile = "$logFolder\$(get-date -Format yyyy_MM_dd)_InstallSoftware.txt"
+try {
+    Start-Transcript $transcriptFile
+}
+catch { Write-Warning "Start-Transcript can not be started: $($Error[0])" }
 
-$transcriptFile = "$logPath\$(get-date -Format yyyy_MM_dd)_InstallSoftware.txt"
-Start-Transcript $transcriptFile
-Write-Host "Checking for elevated permissions"
-if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Warning "Insufficient permissions to run this script. Execute PowerShell script as an administrator."
-    Stop-Transcript
-    Exit 1
+if ($runAsAdmin) {
+    Write-Host "Checking for elevated permissions"
+    if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+        Write-Error "Insufficient permissions to run this script. Execute PowerShell script as an administrator."
+        Stop-Transcript
+        Exit 1
+    }
+    Write-Host "Script is elevated"
 }
-Write-Host "Script is elevated"
-Write-Host "Downloading RZGet.exe"
-Invoke-WebRequest "https://github.com/rzander/ruckzuck/releases/latest/download/RZGet.exe" -OutFile "$folder\RZGet.exe"
-if (!(Test-Path "$folder\RZGet.exe")) {
-    Write-Warning "Error downloading RZGet.exe"
-    Stop-Transcript
-    Exit 1
+Write-Host "Checking for software in computer"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+foreach ($app in $software) {
+    $ULine = '-' * $app.Length
+    Write-Host -Object $ULine -ForegroundColor DarkCyan
+    Write-Host $app -ForegroundColor DarkCyan
+    Write-Host -Object $ULine -ForegroundColor DarkCyan
+    $uriApp = [uri]::EscapeDataString($app)
+    try {
+        $appJson = Invoke-WebRequest "https://cdn.ruckzuck.tools/rest/v2/getsoftwares?shortname=$uriApp" | ConvertFrom-Json
+    }
+    catch {
+        Write-Warning $Error[0]
+    }
+    if ($appJson) {
+        $isSoftwareInstalled = Invoke-Expression -Command $appJson.PSDetection
+        if ($isSoftwareInstalled) {
+            Write-Host "$app is installed on computer" -ForegroundColor Green
+            if ($uninstall) {
+                Write-Host "Running uninstall command"
+                try {
+                    Invoke-Expression -Command $appJson.PSUninstall
+                    if ($ExitCode -eq 0) {
+                        Write-Host "$app uninstallation sucessful" -ForegroundColor Green
+                    }
+                    else {
+                        Write-Warning "$app uninstallation returned $ExitCode"
+                    }
+                }
+                catch {
+                    Write-Warning $Error[0]
+                }
+            }
+        }
+        else {
+            Write-Host "$app not found or older version is installed." -ForegroundColor Yellow
+            if (-not $checkOnly -and -not $uninstall) {
+                if ($appJson.PSPreReq) {
+                    If (Get-AppInstaller $appJson.Files) {
+                        try {
+                            if (-not [string]::IsNullOrEmpty($appJson.PSPreInstall)) {
+                                Write-Host "Running pre install command"
+                            
+                                Invoke-Expression -Command $appJson.PSPreInstall
+                            
+                            }
+            
+                            Write-Host "Running install command"
+                            Invoke-Expression -Command $appJson.PSInstall
+                            if ($ExitCode -eq 0) {
+                                Write-Host "$app installation sucessful" -ForegroundColor Green
+                            }
+                            else {
+                                Write-Warning "$app installation returned $ExitCode"
+                            }
+                            if (-not [string]::IsNullOrEmpty($appJson.PSPostInstall)) {
+                                Write-Host "Running post install command"
+                                Invoke-Expression -Command $appJson.PSPostInstall
+                            }
+                            Invoke-FilesDeletion $appJson.Files
+                        }
+                        catch {
+                            Write-Warning $Error[0]
+                        }
+                    }
+                }
+                else {
+                    Write-Warning "$app can not be installed on computer because $($appJson.PSPreReq) is false"
+                }
+            }
+        }
+    }
+    else {
+        Write-Warning "$app not found in RuckZuck repository"
+    }
 }
-Write-Host "Running $($folder)\RZGet.exe $($RZGetArguments)"
-Invoke-Process -FilePath "$folder\RZGet.exe" -ArgumentList $RZGetArguments -DisplayLevel StdOut
-Stop-Transcript
+Set-Location $PSScriptRoot
+try {
+    Stop-Transcript
+}
+catch { Write-Warning $Error[0] }

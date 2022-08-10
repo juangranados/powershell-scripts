@@ -10,6 +10,14 @@
       "args": [
         "-target \"soporte@3digits.es\" -months 13 -deleteComplianceSearch"
       ]
+    },
+    {
+      "name": "Launch Install-Software Script",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}\\Install Software Locally\\Install-SoftwareV2.ps1",
+      "cwd": "${workspaceFolder}",
+      "args": ["-software '7-Zip','Notepad++','Edge','Teams','Postman'"]
     }
   ]
 }
