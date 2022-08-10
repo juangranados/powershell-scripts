@@ -86,7 +86,7 @@ And line 36 with the software to install
 ```
 **Run PSExec**
 
-psexec.exe -s \\<COMPUTERNAME> powershell.exe -ExecutionPolicy Bypass -file \\<NETWORKSHARE\Install-Software.ps1>
+psexec.exe -s \\<COMPUTER_NAME> powershell.exe -ExecutionPolicy Bypass -file \\<NETWORKSHARE\Install-Software.ps1>
 
 ```
 psexec.exe -s \\WK-MARKETING01 powershell.exe -ExecutionPolicy Bypass -file \\FILESERVER-01\Install-Software\Install-Software.ps1
