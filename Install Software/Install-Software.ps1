@@ -157,7 +157,7 @@ $ErrorActionPreference = 'Stop'
 Set-Folder $tempFolder
 Set-Folder $logFolder
 Set-Location $tempFolder
-$transcriptFile = "$logFolder\$(get-date -Format yyyy_MM_dd)_InstallSoftware.txt"
+$transcriptFile = "$logFolder\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME)_InstallSoftware.txt"
 try {
     Start-Transcript $transcriptFile
 }
