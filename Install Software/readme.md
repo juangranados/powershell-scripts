@@ -4,6 +4,8 @@ This script Install/Update/Uninstall software using RZGet repository from https:
 
 [Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/Install-Software.ps1)
 
+![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/locally.png)
+
 ## Parameters
 
 ### tempFolder
@@ -83,3 +85,4 @@ Example
 ```
 psexec.exe -s \\WK-MARKETING01 powershell.exe "-Command"  "\\FILESERVER-01\Install-Software\Install-Software.ps1 -software '7-Zip','Notepad++','Edge' -logFolder '\\ES-CPD-BCK02\scripts\InstallSoftware\Log'"
 ```
+![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/psexec.png)
