@@ -2,7 +2,7 @@
 
 This script Install/Update/Uninstall software using RZGet repository from https://ruckzuck.tools/.
 
-[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software%20Locally/Install-Software.ps1)
+[Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/Install-Software.ps1)
 
 ## Parameters
 
@@ -31,7 +31,7 @@ This script Install/Update/Uninstall software using RZGet repository from https:
 
 ## Examples 
 
-Install ```7-Zip, Notepad++, Edge, 3CXPhone for Windows, Google Chrome, Teams and Postman``` if not installed or if is outdated and save log in ```\\ES-CPD-BCK02\scripts\InstallSoftware\Log``` using ```C:\temp\InstallSoftware as temp folder```.
+Install ```7-Zip, Notepad++, Edge, 3CXPhone for Windows, Google Chrome, Teams and Postman``` if not installed or if is outdated and save log in ```\\ES-CPD-BCK02\scripts\InstallSoftware\Log``` using ```C:\temp\InstallSoftware``` as temp folder.
 
 ```powershell
 Install-Software.ps1 -tempFolder C:\temp\InstallSoftware -software "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman" -logFolder "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
