@@ -73,21 +73,13 @@ And line 36 with the software to install
 ```
 
 ### Instructions for Remote Execution
-As [PsExec](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec) does not allow Powershell parameters, you must harcode ```software``` parameter.
+You can download PSExec from [here](https://docs.microsoft.com/en-us/sysinternals/downloads/psexec).
 
-Change line 35 by:
-```powershell
-[Parameter(Mandatory = $false)]
-```
-
-And line 36 with the software to install
-```powershell
-[string[]]$software="7-Zip","Notepad++","Edge"
-```
 **Run PSExec**
 
-psexec.exe -s \\<COMPUTER_NAME> powershell.exe -ExecutionPolicy Bypass -file \\<NETWORKSHARE\Install-Software.ps1>
+psexec.exe -s \\```COMPUTER_NAME``` powershell.exe "-Command" "\\```NETWORKSHARE\Install-Software.ps1 -parameters```"
 
+Example
 ```
-psexec.exe -s \\WK-MARKETING01 powershell.exe -ExecutionPolicy Bypass -file \\FILESERVER-01\Install-Software\Install-Software.ps1
+psexec.exe -s \\WK-MARKETING01 powershell.exe "-Command"  "\\FILESERVER-01\Install-Software\Install-Software.ps1 -software '7-Zip','Notepad++','Edge' -logFolder '\\ES-CPD-BCK02\scripts\InstallSoftware\Log'"
 ```

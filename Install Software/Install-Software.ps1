@@ -176,6 +176,9 @@ if ($runAsAdmin) {
     Write-Host "Script is elevated"
 }
 Write-Host "Checking for software in computer"
+if ($software.Count -eq 1) { 
+    $software = $software.Split(',') 
+}
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $apiUrl = Invoke-RestMethod -Uri "https://ruckzuck.tools/rest/v2/geturl"
 if ([string]::IsNullOrEmpty($apiUrl)) {
