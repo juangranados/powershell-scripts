@@ -116,7 +116,7 @@ function Get-AppInstaller ($files) {
             }
             Write-Host "Downloading $($file.URL)"
             $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest $file.URL -OutFile $filePath
+            Invoke-WebRequest $file.URL -OutFile $filePath  -UseBasicParsing
         }
         catch {
             Write-Warning "Error downloading file"
@@ -180,7 +180,7 @@ if ($software.Count -eq 1) {
     $software = $software.Split(',') 
 }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$apiUrl = Invoke-RestMethod -Uri "https://ruckzuck.tools/rest/v2/geturl"
+$apiUrl = Invoke-RestMethod -Uri "https://ruckzuck.tools/rest/v2/geturl" -UseBasicParsing
 if ([string]::IsNullOrEmpty($apiUrl)) {
     Write-Error "RuckZuck API can not be found"
 }
@@ -192,7 +192,7 @@ foreach ($app in $software) {
     $uriApp = [uri]::EscapeDataString($app)
     try {
         $ProgressPreference = 'SilentlyContinue'
-        $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?shortname=$uriApp" | ConvertFrom-Json
+        $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?shortname=$uriApp"  -UseBasicParsing | ConvertFrom-Json
     }
     catch {
         Write-Warning $Error[0]
