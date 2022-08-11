@@ -31,6 +31,11 @@ This script Install/Update/Uninstall software using RZGet repository from https:
 ###  runAsAdmin
 * Check if script is elevated and exit if false.
 
+###  sleep
+* Amount of seconds to sleep.
+* When running as logon script sometimes Windows profile is not ready and installation fails.
+* Default 0 
+
 ## Examples 
 
 Install ```7-Zip, Notepad++, Edge, 3CXPhone for Windows, Google Chrome, Teams and Postman``` if not installed or if is outdated and save log in ```\\ES-CPD-BCK02\scripts\InstallSoftware\Log``` using ```C:\temp\InstallSoftware``` as temp folder.
@@ -59,7 +64,7 @@ Install-Software.ps1 -software "Teams","Postman" -logFolder "\\ES-CPD-BCK02\scri
 6. Create a computer GPO that runs PowerShell Script:
 ```
 Name: \\FILESERVER-01\Install-Software\Install-Software.ps1
-Parameters: -software "7-Zip","Notepad++","Edge" -logFolder '\\FILESERVER-01\Install-Software\logs'
+Parameters: -software "7-Zip","Notepad++","Edge" -logFolder '\\FILESERVER-01\Install-Software\logs' -sleep 60
 ```
 ### Instructions for Intune deployment
 As Intune does not allow parameters, you must harcode ```software``` parameter.

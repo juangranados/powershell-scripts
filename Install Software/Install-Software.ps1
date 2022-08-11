@@ -20,6 +20,10 @@
     Check if software list is already installed
 .PARAMETER runAsAdmin
     Check if script is elevated
+.PARAMETER sleep
+    Amount of seconds to sleep.
+    When running as logon script sometimes Windows profile is not ready and installation fails.
+    Default 0 
 .EXAMPLE
     .\Install-Software -tempFolder C:\temp\InstallSoftware -software "7-Zip","Notepad++","Edge","3CXPhone for Windows","Google Chrome","Teams","Postman" -logFolder "\\ES-CPD-BCK02\scripts\InstallSoftware\Log"
 .LINK
@@ -41,7 +45,9 @@ Param(
     [Parameter()]
     [switch]$checkOnly,
     [Parameter()]
-    [switch]$runAsAdmin
+    [switch]$runAsAdmin,
+    [Parameter()]
+    [int]$sleep = 0
 )
 function Set-Folder([string]$folderPath) {
     if ($folderPath.Chars($folderPath.Length - 1) -eq '\') {
@@ -162,7 +168,10 @@ try {
     Start-Transcript $transcriptFile
 }
 catch { Write-Warning "Start-Transcript can not be started: $($Error[0])" }
-
+if ($sleep -ne 0) {
+    Write-Host "Waiting $sleep seconds"
+    Start-Sleep $sleep
+}
 if ($runAsAdmin) {
     Write-Host "Checking for elevated permissions"
     if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
