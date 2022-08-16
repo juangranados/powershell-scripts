@@ -2,6 +2,8 @@
 
 This script Install/Update/Uninstall software using RZGet repository from https://ruckzuck.tools/.
 
+⚠ **WARNING: Currently not working due to the need for an APIKey**
+
 [Right click here and select "Save link as" to download](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/Install-Software.ps1)
 
 ![screenshot](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20Software/locally.png)
@@ -64,7 +66,7 @@ Install-Software.ps1 -software "Teams","Postman" -logFolder "\\ES-CPD-BCK02\scri
 6. Create a computer GPO that runs PowerShell Script:
 ```
 Name: \\FILESERVER-01\Install-Software\Install-Software.ps1
-Parameters: -software "7-Zip","Notepad++","Edge" -logFolder '\\FILESERVER-01\Install-Software\logs' -sleep 60
+Parameters: -software "7-Zip","Notepad++","Edge" -logFolder "\\FILESERVER-01\Install-Software\logs" -sleep 60
 ```
 ### Instructions for Intune deployment
 As Intune does not allow parameters, you must harcode ```software``` parameter.
