@@ -158,6 +158,50 @@ function Invoke-FilesDeletion ($files) {
         Remove-Item -Path $filePath -Force -Confirm:$false
     }
 }
+function Get-InstalledApps {
+    if ([IntPtr]::Size -eq 4) {
+        $regpath = @(
+            'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+            'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        )
+    }
+    else {
+        $regpath = @(
+            'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+            'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+            'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        )
+    }
+    Get-ItemProperty $regpath | . { process { if ($_.DisplayName -and $_.UninstallString) { $_ } } } | 
+    Select-Object DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString | 
+    Sort-Object DisplayVersion
+}
+function StringVersionToFloat($version) {
+    while (($version.ToCharArray() | Where-Object { $_ -eq '.' } | Measure-Object).Count -gt 1) {
+        $aux = $version.Substring($version.LastIndexOf('.') + 1)
+        $version = $version.Substring(0, $version.LastIndexOf('.')) + $aux
+    }
+    return [float]$version
+}
+function Get-AppIsInstalled($shortName) {
+    $app = $catalog | Where-Object ShortName -in $shortName
+    if (-not $app) {
+        Write-Warning "$shortName not found in the catalog"
+        return $true
+    }
+    $appInstalled = Get-InstalledApps | Where-Object { $_.DisplayName -like $app.ProductName }
+    if (-not $appInstalled) {
+        Write-Host "$shortName not found in computer"
+        return $false
+    }
+    Write-Host "$shortName found in computer, installed version is $([version]$appInstalled.DisplayVersion) and current version is $([version]$app.ProductVersion)"
+    if ([version]$appInstalled.DisplayVersion -lt [version]$app.ProductVersion) {
+        return $false
+    }
+    else {
+        return $appInstalled
+    }
+}
 #https://cdn.ruckzuck.tools/rest/v2/GetCatalog
 $ErrorActionPreference = 'Stop'
 Set-Folder $tempFolder
@@ -192,6 +236,20 @@ if ($software.Count -eq 1) {
 $apiUrl = Invoke-RestMethod -Uri "https://ruckzuck.tools/rest/v2/geturl" -UseBasicParsing
 if ([string]::IsNullOrEmpty($apiUrl)) {
     Write-Error "RuckZuck API can not be found"
+    try {
+        Stop-Transcript
+    }
+    catch { Write-Warning $Error[0] }
+    Exit 1
+}
+$catalog = Invoke-WebRequest "$apiUrl/rest/v2/GetCatalog" -UseBasicParsing | ConvertFrom-Json
+if ([string]::IsNullOrEmpty($catalog)) {
+    Write-Error "RuckZuck Catalog can not be found"
+    try {
+        Stop-Transcript
+    }
+    catch { Write-Warning $Error[0] }
+    Exit 1
 }
 foreach ($app in $software) {
     $ULine = '-' * $app.Length
@@ -199,8 +257,8 @@ foreach ($app in $software) {
     Write-Host $app -ForegroundColor DarkCyan
     Write-Host -Object $ULine -ForegroundColor DarkCyan
     $uriApp = [uri]::EscapeDataString($app)
+    Get-AppIsInstalled $app
     try {
-        $ProgressPreference = 'SilentlyContinue'
         $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?shortname=$uriApp"  -UseBasicParsing | ConvertFrom-Json
     }
     catch {

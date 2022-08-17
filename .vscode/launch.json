@@ -15,7 +15,7 @@
       "name": "Launch Install-Software Script",
       "type": "PowerShell",
       "request": "launch",
-      "script": "${workspaceFolder}\\Install Software Locally\\Install-SoftwareV2.ps1",
+      "script": "${workspaceFolder}\\Install Software\\Install-Software.ps1",
       "cwd": "${workspaceFolder}",
       "args": ["-software '7-Zip','Notepad++','Edge','Teams','Postman'"]
     }
