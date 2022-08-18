@@ -187,7 +187,7 @@ function Get-AppIsInstalled($shortName) {
     $app = $catalog | Where-Object ShortName -in $shortName
     if (-not $app) {
         Write-Warning "$shortName not found in the catalog"
-        return $true
+        return $null
     }
     $appInstalled = Get-InstalledApps | Where-Object { $_.DisplayName -like $app.ProductName }
     if (-not $appInstalled) {
@@ -207,6 +207,7 @@ $ErrorActionPreference = 'Stop'
 Set-Folder $tempFolder
 Set-Folder $logFolder
 Set-Location $tempFolder
+$apiKey = "26WRbGLCiABYG6xTuGYo14mxnwmBiBmUy6jyjBB7u5dR"
 $transcriptFile = "$logFolder\$(get-date -Format yyyy_MM_dd)_$($env:COMPUTERNAME)_InstallSoftware.txt"
 try {
     Start-Transcript $transcriptFile
@@ -257,46 +258,25 @@ foreach ($app in $software) {
     Write-Host $app -ForegroundColor DarkCyan
     Write-Host -Object $ULine -ForegroundColor DarkCyan
     $uriApp = [uri]::EscapeDataString($app)
-    Get-AppIsInstalled $app
-    try {
-        $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?shortname=$uriApp"  -UseBasicParsing | ConvertFrom-Json
-    }
-    catch {
-        Write-Warning $Error[0]
-    }
-    if ($appJson) {
-        $isSoftwareInstalled = Invoke-Expression -Command $appJson.PSDetection
-        if ($isSoftwareInstalled) {
-            Write-Host "$app is installed on computer" -ForegroundColor Green
-            if ($uninstall -and -not $checkOnly) {
-                Write-Host "Running uninstall command"
-                try {
-                    Invoke-Expression -Command $appJson.PSUninstall
-                    if ($ExitCode -eq 0) {
-                        Write-Host "$app uninstallation sucessful" -ForegroundColor Green
-                    }
-                    else {
-                        Write-Warning "$app uninstallation returned $ExitCode"
-                    }
-                }
-                catch {
-                    Write-Warning $Error[0]
-                }
-            }
+    $appInstalled = Get-AppIsInstalled $app
+    if ($appInstalled -eq $false) {
+        try {
+            $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?apikey=$apiKey&shortname=$uriApp"  -UseBasicParsing | ConvertFrom-Json
         }
-        else {
-            Write-Host "$app not found or older version is installed." -ForegroundColor Yellow
+        catch {
+            Write-Warning $Error[0]
+        }
+        if ($appJson) {
             if (-not $checkOnly -and -not $uninstall) {
                 if ($appJson.PSPreReq) {
                     If (Get-AppInstaller $appJson.Files) {
                         try {
                             if (-not [string]::IsNullOrEmpty($appJson.PSPreInstall)) {
                                 Write-Host "Running pre install command"
-                            
+                                
                                 Invoke-Expression -Command $appJson.PSPreInstall
-                            
                             }
-            
+                
                             Write-Host "Running install command"
                             Invoke-Expression -Command $appJson.PSInstall
                             if ($ExitCode -eq 0) {
@@ -321,9 +301,36 @@ foreach ($app in $software) {
                 }
             }
         }
+        else {
+            Write-Warning "$app not found in RuckZuck repository"
+        }
     }
-    else {
-        Write-Warning "$app not found in RuckZuck repository"
+    elseif ($appInstalled -and $uninstall -and -not $checkOnly) {
+        Write-Host "Uninstalling $app" 
+        try {
+            $appJson = Invoke-WebRequest "$apiUrl/rest/v2/getsoftwares?apikey=$apiKey&shortname=$uriApp"  -UseBasicParsing | ConvertFrom-Json
+        }
+        catch {
+            Write-Warning $Error[0]
+        }
+        if ($appJson) {
+            Write-Host "Running uninstall command"
+            try {
+                Invoke-Expression -Command $appJson.PSUninstall
+                if ($ExitCode -eq 0) {
+                    Write-Host "$app uninstallation sucessful" -ForegroundColor Green
+                }
+                else {
+                    Write-Warning "$app uninstallation returned $ExitCode"
+                }
+            }
+            catch {
+                Write-Warning $Error[0]
+            }
+        }
+        else {
+            Write-Warning "$app not found in RuckZuck repository"
+        }
     }
 }
 Set-Location $PSScriptRoot
