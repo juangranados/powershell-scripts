@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-	Install LibreOffice for Windows if previous or no version detected and uninstall previous versions.
+    Install LibreOffice for Windows if previous or no version detected and uninstall previous versions.
 .DESCRIPTION
-	This script LibreOffice only if a previous version or no version was detected.
+    This script LibreOffice only if a previous version or no version was detected.
     You can avoid uninstall old versions with -NoUninstall switch.
 .PARAMETER InstallPath
 	LibreOffice full installer path. It could be download from https://www.libreoffice.org/download/download-libreoffice/
@@ -35,7 +35,7 @@ Param(
     [string]$LogPath,
     [Parameter(Mandatory = $false, Position = 2)] 
     [ValidateNotNullOrEmpty()]
-    [string]$MSIArguments= "/qn /norestart ALLUSERS=1 CREATEDESKTOPLINK=0 REGISTER_ALL_MSO_TYPES=0 REGISTER_NO_MSO_TYPES=1 ISCHECKFORPRODUCTUPDATES=0 QUICKSTART=0 ADDLOCAL=ALL UI_LANGS=en_US,ca,es"
+    [string]$MSIArguments= "/qn /norestart ALLUSERS=1 CREATEDESKTOPLINK=0 REGISTER_ALL_MSO_TYPES=0 REGISTER_NO_MSO_TYPES=1 ISCHECKFORPRODUCTUPDATES=0 QUICKSTART=0 ADDLOCAL=ALL UI_LANGS=en_US"
 )
 #Requires -RunAsAdministrator
 function Get-InstalledApps {
