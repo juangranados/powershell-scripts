@@ -4,7 +4,7 @@ Install LibreOffice if previous or no version was detected.
 
 This script install LibreOffice only if a previous version or no version was detected.
 
-[Install-LibreOffice](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%LibreOffice/Install-LibreOffice.ps1): to install LibreOffice with GPO.
+[Install-LibreOffice](https://raw.githubusercontent.com/juangranados/powershell-scripts/main/Install%20LibreOffice/Install-LibreOffice.ps1): script to install LibreOffice with GPO.
 
 ## Instructions
 
