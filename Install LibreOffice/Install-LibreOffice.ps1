@@ -61,6 +61,21 @@ function StringVersionToFloat($version) {
     return [float]$version
 }
 
+function Get-MSIFileVersion ([System.IO.FileInfo]$msiFilePath) {
+    try { 
+        $WindowsInstaller = New-Object -com WindowsInstaller.Installer 
+        $Database = $WindowsInstaller.GetType().InvokeMember("OpenDatabase", "InvokeMethod", $Null, $WindowsInstaller, @($msiFilePath.FullName, 0)) 
+        $Query = "SELECT Value FROM Property WHERE Property = 'ProductVersion'"
+        $View = $database.GetType().InvokeMember("OpenView", "InvokeMethod", $Null, $Database, ($Query)) 
+        $View.GetType().InvokeMember("Execute", "InvokeMethod", $Null, $View, $Null) | Out-Null
+        $Record = $View.GetType().InvokeMember( "Fetch", "InvokeMethod", $Null, $View, $Null ) 
+        $Version = $Record.GetType().InvokeMember( "StringData", "GetProperty", $Null, $Record, 1 ) 
+        return $Version
+    } catch { 
+        throw "Failed to get MSI file version: {0}." -f $_
+    }     
+}
+
 if (-not [string]::IsNullOrWhiteSpace($LogPath) -and $logPath.Chars($logPath.Length - 1) -eq '\') {
     $logPath = ($logPath.TrimEnd('\'))
 }
@@ -82,7 +97,7 @@ catch {
     Exit 1
 }
 
-$loExeVersion = StringVersionToFloat (Get-AppLockerFileInformation -Path $InstallPath | Select -ExpandProperty Publisher | select BinaryVersion).BinaryVersion.ToString()
+$loExeVersion = StringVersionToFloat $(Get-MSIFileversion $loExeFile)
 
 Write-Host "LibreOffice $($loExeVersion) selected for installation."
 
