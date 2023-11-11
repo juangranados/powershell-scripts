@@ -5,7 +5,7 @@
     This script LibreOffice only if a previous version or no version was detected.
     You can avoid uninstall old versions with -NoUninstall switch.
 .PARAMETER InstallPath
-	LibreOffice full installer path. It could be download from https://www.libreoffice.org/download/download-libreoffice/
+    LibreOffice full installer path. It could be download from https://www.libreoffice.org/download/download-libreoffice/
     Authenticated users must have read permissions over shared folder.
     Example: \\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi
 .PARAMETER LogPath
@@ -21,7 +21,7 @@
 .EXAMPLE
     Install LibreOffice from network share, saving log in Log folder of network share.
     Note: network share must have read permissions on "\\FILESERVER-01\LibreOffice\" and write on "\\FILESERVER-01\LibreOffice\Logs" for "Authenticated Users" group.
-	InstallLibreOffice.ps1 "\\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" "\\FILESERVER-01\LibreOffice\Logs"
+    InstallLibreOffice.ps1 "\\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" "\\FILESERVER-01\LibreOffice\Logs"
 .NOTES 
 	Author: Juan Granados 
 	Date:   November 2023
