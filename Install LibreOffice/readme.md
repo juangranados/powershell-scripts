@@ -1,4 +1,4 @@
-# Install or update LibreOffice on domain computers using GPO.
+# Install or update LibreOffice on domain computers using GPO and PowerShell.
 
 Install LibreOffice if previous or no version was detected.
 
