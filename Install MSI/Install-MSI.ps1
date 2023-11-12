@@ -14,17 +14,19 @@
     Name of the application to search for it in the registry in order to get the version installed. 
     It does not need to be the exact name, but search by this name must return only one item or nothing.
     You can simulate the search using the command:
-    Get-WmiObject -Class win32_product | Where-Object -FilterScript {$_.Name -match "SearchName"}
+    Get-WmiObject -Class win32_product | Where-Object -FilterScript {$_.Name -match '*SearchName*'}
 .PARAMETER LogPath
     Log path (optional). ComputerName.log file will be created.
     Example: \\FILESERVER-01\LibreOffice\Logs (Log will be saved to \\FILESERVER-01\JRE\computername.log)
 .PARAMETER MSIArguments
     Parameters of MSI file. 
+    Warning! There seems to be a maximum number of 256 characters that can be used in the Script Parameters setting in a GPO Startup/Shutdown/Logon/Logoff PowerShell script.
+    Sometimes scripts do not run even with fewer characters, so you can create a script that calls this script with all its parameters and run it via GPO.
     Optional, /qn is already applied.
 .EXAMPLE
     Install LibreOffice from network share, saving log in Log folder of network share.
     Note: network share must have read permissions on "\\FILESERVER-01\LibreOffice\" and write on "\\FILESERVER-01\LibreOffice\Logs" for "Authenticated Users" group in order to run it with GPO.
-    Install-MSI.ps1 "\\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" -SearchName "LibreOffice" -LogPath "\\FILESERVER-01\LibreOffice\Logs" -MSIArguments "/qn /norestart ALLUSERS=1 CREATEDESKTOPLINK=0 REGISTER_ALL_MSO_TYPES=0 REGISTER_NO_MSO_TYPES=1 ISCHECKFORPRODUCTUPDATES=0 QUICKSTART=0 ADDLOCAL=ALL UI_LANGS=en_US"
+    Install-MSI.ps1 -InstallPath "\\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" -SearchName "LibreOffice" -LogPath "\\FILESERVER-01\LibreOffice\Logs" -MSIArguments "UI_LANGS=en_US,es"
 .NOTES 
 	Author: Juan Granados 
 	Date:   November 2023
