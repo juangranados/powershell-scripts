@@ -11,24 +11,24 @@ Is a more complete alternative to the msi installation via gpo.
 ## Parameters
 
 **InstallPath**
-MSI full installer path
-Example: \\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi
+MSI full installer path  
+Example: \\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi  
 
 **SearchName**
-Name of the application to search for it in the registry in order to get the version installed.
-It does not need to be the exact name, but search by this name must return only one item or nothing.
-You can simulate the search using the command:
-Get-WmiObject  Win32_Product | Where-Object {$_.Name -like '*Office*'}
+Name of the application to search for it in the registry in order to get the version installed.  
+It does not need to be the exact name, but search by this name must return only one item or nothing.  
+You can simulate the search using the command:  
+Get-WmiObject  Win32_Product | Where-Object {$_.Name -like '*Office*'}  
   
-**LogPath**
-Log path (optional). ComputerName.log file will be created.
-Example: \\FILESERVER-01\LibreOffice\Logs (Log will be saved to \\FILESERVER-01\JRE\computername.log)
+**LogPath**  
+Log path (optional). ComputerName.log file will be created.  
+Example: \\FILESERVER-01\LibreOffice\Logs (Log will be saved to \\FILESERVER-01\JRE\computername.log)  
 
-**MSIArguments**
-Parameters of MSI file.
-Warning! There seems to be a maximum number of 256 characters that can be used in the Script Parameters setting in a GPO Startup/Shutdown/Logon/Logoff PowerShell script.
-Sometimes scripts do not run even with fewer characters, so you can create a script that calls this script with all its parameters and run it via GPO.
-Optional, /qn is already applied.
+**MSIArguments**  
+Parameters of MSI file.  
+Warning! There seems to be a maximum number of 256 characters that can be used in the Script Parameters setting in a GPO Startup/Shutdown/Logon/Logoff PowerShell script.  
+Sometimes scripts do not run even with fewer characters, so you can create a script that calls this script with all its parameters and run it via GPO.  
+Optional, /qn is already applied.  
 
 ## Instructions for deploying LibreOffice MSI
 
