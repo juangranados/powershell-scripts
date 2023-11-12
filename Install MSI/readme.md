@@ -10,11 +10,11 @@ Is a more complete alternative to the msi installation via gpo.
 
 ## Parameters
 
-**InstallPath**
+**InstallPath**  
 MSI full installer path  
 Example: \\FILESERVER-01\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi  
 
-**SearchName**
+**SearchName**  
 Name of the application to search for it in the registry in order to get the version installed.  
 It does not need to be the exact name, but search by this name must return only one item or nothing.  
 You can simulate the search using the command:  
