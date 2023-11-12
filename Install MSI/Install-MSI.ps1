@@ -14,7 +14,7 @@
     Name of the application to search for it in the registry in order to get the version installed. 
     It does not need to be the exact name, but search by this name must return only one item or nothing.
     You can simulate the search using the command:
-    Get-WmiObject -Class win32_product | Where-Object -FilterScript {$_.Name -match '*SearchName*'}
+    Get-WmiObject  Win32_Product | Where-Object {$_.Name -like '*Office*'}
 .PARAMETER LogPath
     Log path (optional). ComputerName.log file will be created.
     Example: \\FILESERVER-01\LibreOffice\Logs (Log will be saved to \\FILESERVER-01\JRE\computername.log)
