@@ -161,15 +161,16 @@ else {
 }
 
 if ($Install) {
+    $msiLog = "$($env:LOCALAPPDATA)\msi_Installation.txt"
     if (-not ([string]::IsNullOrEmpty($MSIArguments))) {
-    	$MSIArgs = "/i $($InstallPath) /qn " + $MSIArguments + " /l $($env:LOCALAPPDATA)\msi_Installation.txt"
+    	$MSIArgs = "/i $($InstallPath) /qn " + $MSIArguments + " /l $($msiLog)"
     } else {
-    	$MSIArgs = "/i $($InstallPath) /qn /l $($env:LOCALAPPDATA)\msi_Installation.txt"
+    	$MSIArgs = "/i $($InstallPath) /qn /l $($msiLog)"
     }
     Write-Host "Starting installation of $($MSIName) version $($MSIVersion) and exiting."
     Write-Host "Running: msiexec.exe $($MSIArgs)"
     $exitCode = (Start-Process "msiexec.exe" -ArgumentList $MSIArgs -Wait -NoNewWindow -PassThru).ExitCode
-    get-content "$($env:LOCALAPPDATA)\msi_Installation.txt"
+    get-content $msiLog
     if ($exitCode -eq 0) {
         Write-Host "$($MSIName) installed sucessfully"
     }
