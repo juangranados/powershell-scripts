@@ -37,8 +37,8 @@ Optional, /qn is already applied.
 3. Copy ```Install-MSI.ps1``` to your script folder ```\\FILESERVER-01\Scripts$\Install-MSI.ps1```
 4. Create shared folder for logs: ```\\FILESERVER-01\LibreOffice\logs```
 5. Grant 'Authenticated users' write access to ```\\FILESERVER-01\LibreOffice\logs```
-6. Create a powershell script named Install-LibreOffice.ps1 to avoid GPO parameter limit:
+6. Create a powershell script named _Install-LibreOffice.ps1_ to avoid GPO parameter limit and run the installation on background:
 ```
-\\FILESERVER-01\Scripts$\Install-MSI.ps1 -InstallPath "\\FILESERVER-01\Software$\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" -LogPath "\\FILESERVER-01\Software$\LibreOffice\Logs" -SearchName "LibreOffice" -MSIArguments "/norestart ALLUSERS=1 CREATEDESKTOPLINK=0 REGISTER_ALL_MSO_TYPES=0 REGISTER_NO_MSO_TYPES=1 ISCHECKFORPRODUCTUPDATES=0 QUICKSTART=0 ADDLOCAL=ALL UI_LANGS=en_US,ca,es"
+Start-Job -ScriptBlock {\\FILESERVER-01\Scripts$\Install-MSI.ps1 -InstallPath "\\FILESERVER-01\Software$\LibreOffice\LibreOffice_7.5.8_Win_x86-64.msi" -LogPath "\\FILESERVER-01\Software$\LibreOffice\Logs" -SearchName "LibreOffice" -MSIArguments "/norestart ALLUSERS=1 CREATEDESKTOPLINK=0 REGISTER_ALL_MSO_TYPES=0 REGISTER_NO_MSO_TYPES=1 ISCHECKFORPRODUCTUPDATES=0 QUICKSTART=0 ADDLOCAL=ALL UI_LANGS=en_US,ca,es"}
 ```
-7. Create a GPO that runs Install-LibreOffice.ps1:
+7. Create a GPO that runs _Install-LibreOffice.ps1_:
