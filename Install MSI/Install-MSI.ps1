@@ -162,6 +162,9 @@ else {
 
 if ($Install) {
     $msiLog = "$($env:LOCALAPPDATA)\msi_Installation.txt"
+    if (Test-Path $msiLog) {
+        Remove-Item $msiLog -Force
+    }
     if (-not ([string]::IsNullOrEmpty($MSIArguments))) {
     	$MSIArgs = "/i $($InstallPath) /qn " + $MSIArguments + " /l $($msiLog)"
     } else {
