@@ -162,7 +162,11 @@ else {
 
 if ($Install) {
     Write-Host "Starting installation of $($MSIName) version $($MSIVersion) and exiting."
-    $MSIArgs = "/i $($InstallPath) /qn" + $MSIArguments + " /l $($env:LOCALAPPDATA)\msi_Installation.txt"
+    if (-not ([string]::IsNullOrEmpty($MSIArguments) {
+    	$MSIArgs = "/i $($InstallPath) /qn " + $MSIArguments + " /l $($env:LOCALAPPDATA)\msi_Installation.txt"
+    } else {
+    	$MSIArgs = "/i $($InstallPath) /qn /l $($env:LOCALAPPDATA)\msi_Installation.txt"
+    }
     $exitCode = (Start-Process "msiexec.exe" -ArgumentList $MSIArgs -Wait -NoNewWindow -PassThru).ExitCode
     get-content "$($env:LOCALAPPDATA)\msi_Installation.txt"
     if ($exitCode -eq 0) {
