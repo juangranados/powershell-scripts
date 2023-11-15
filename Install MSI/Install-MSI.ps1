@@ -166,7 +166,7 @@ if ($Install) {
         Remove-Item $msiLog -Force
     }
     if (-not ([string]::IsNullOrEmpty($MSIArguments))) {
-    	$MSIArgs = "/i `"$($InstallPath)`" /qn " + $MSIArguments + " /l $($msiLog)"
+    	$MSIArgs = "/i `"$($InstallPath)`" /qn $($MSIArguments) /l $($msiLog)"
     } else {
     	$MSIArgs = "/i `"$($InstallPath)`" /qn /l $($msiLog)"
     }
